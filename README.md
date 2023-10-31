@@ -32,6 +32,7 @@ Detailed documentation and instructions on how to install can be found: https://
  - Multiple PHP versions is currently not supported on Ubuntu 23.04.
  - CSRF random expiry warning - just hard refresh the page if you see a "session expired" message.
  - DB - need to move to app level instead of per request.
+ - Service works currently not 100% implemented.
 
 ## Getting help
 
