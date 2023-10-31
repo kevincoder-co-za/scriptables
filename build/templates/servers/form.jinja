@@ -1,0 +1,291 @@
+<div class="row">
+  <div class="col-md-12 mb-2">
+<h2 class="az-dashboard-title">{{title}}</h2>
+  </div>
+
+  <div class="col-md-12">
+    <div class="card card-info">
+
+      <form class="form-horizontal" method="post" action="{{action}}">
+        <input type="hidden" name="csrftoken" value="{{csrftoken}}" />
+        
+        <div class="card-body">
+
+          <div class="form-group row">
+            <label class="col-sm-2 col-form-label"
+              >SSH Key*</label
+            >
+            <div class="col-sm-10">
+                <select class="form-control" required name="ssh_key_id">
+                    {% for key in sshKeys %}
+                        <option value="{{key.ID}}">{{key.Name}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+          </div>
+                 <div class="form-group row">
+            <label class="col-sm-2 col-form-label"
+              >Public Server IP Address*</label
+            >
+            <div class="col-sm-10">
+                <input type="text" class="form-control" required name="server_ip" value="{{ServerIP}}" />
+            </div>
+          </div>
+          
+          <div class="form-group row">
+            <label class="col-sm-2 col-form-label"
+              >Server name*</label
+            >
+            <div class="col-sm-10">
+                <input type="text" class="form-control" required name="server_name" value="{{ServerName}}" />
+            </div>
+          </div>
+          <div class="form-group row">
+            <label class="col-sm-2 col-form-label"
+              >Server Type</label
+            >
+            <div class="col-sm-10">
+                <input type="text" class="form-control" required name="server_type" value="{{ServerType}}" readonly />
+            </div>
+          </div>
+
+          <div class="form-group row">
+            <label class="col-sm-2 col-form-label"
+              >Scriptables  {% if ServerType == "scriptable" %} * {% endif %} <i class="fas fa-question-circle" title="In addition to the default builder for this server type. You can write extensions to execute further steps."></i></label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" value="{{ScriptableName}}" name="scriptable_name"
+                {% if ServerType == "scriptable" %}
+                placeholder="Comma seperated list of folder name(s) of scripts found inside root scriptables/ directory."
+                required
+                {% else %}
+                placeholder="Comma seperated list of folder name(s) of scripts found inside root scriptables/ directory. (Optional)"
+                {% endif %}
+                 />
+            </div>
+          </div>
+
+
+   
+
+          <div class="form-group row">
+            <label class="col-sm-2 col-form-label"
+              >Private Server IP Address</label
+            >
+            <div class="col-sm-10">
+                <input type="text" class="form-control" name="private_server_ip" value="{{PrivateServerIP}}" placeholder="Optional - for internal networking between servers. Defaults to the public IP if not set." />
+            </div>
+          </div>
+
+
+          {% if ServerType == "lemp" %}
+          <div class="form-group row">
+            <label class="col-sm-2 col-form-label"
+              >PHP Version*</label
+            >
+            <div class="col-sm-10">
+                <select class="form-control" required name="php_version">
+                  <option value="8.2"  {% if PhpVersion == "8.2" %} selected {% endif %}>8.2</option>
+                  <option value="8.1"  {% if PhpVersion == "8.1" %} selected {% endif %}>8.1</option>
+                  <option value="7.4"  {% if PhpVersion == "7.4" %} selected {% endif %}>7.4</option>
+                  <option value="7.3"  {% if PhpVersion == "7.3" %} selected {% endif %}>7.3</option>
+                  <option value="7.2" {% if PhpVersion == "7.2" %} selected {% endif %}>7.2</option>
+                </select>
+            </div>
+          </div>
+          {% endif %}
+
+          {% if ServerType == "lamp" %}
+          <div class="form-group row">
+            <label class="col-sm-2 col-form-label"
+              >PHP Version*</label
+            >
+            <div class="col-sm-10">
+                <select class="form-control" required name="php_version">
+                  <option value="8.2"  {% if PhpVersion == "8.2" %} selected {% endif %}>8.2</option>
+                  <option value="8.1"  {% if PhpVersion == "8.1" %} selected {% endif %}>8.1</option>
+                  <option value="7.4"  {% if PhpVersion == "7.4" %} selected {% endif %}>7.4</option>
+                  <option value="7.3"  {% if PhpVersion == "7.3" %} selected {% endif %}>7.3</option>
+                  <option value="7.2" {% if PhpVersion == "7.2" %} selected {% endif %}>7.2</option>
+                </select>
+            </div>
+          </div>
+          {% endif %}
+
+          {% if ServerType == "php" %}
+          <div class="form-group row">
+            <label class="col-sm-2 col-form-label"
+              >PHP Version*</label
+            >
+            <div class="col-sm-10">
+                <select class="form-control" required name="php_version">
+                  <option value="8.2"  {% if PhpVersion == "8.2" %} selected {% endif %}>8.2</option>
+                  <option value="8.1"  {% if PhpVersion == "8.1" %} selected {% endif %}>8.1</option>
+                  <option value="7.4"  {% if PhpVersion == "7.4" %} selected {% endif %}>7.4</option>
+                  <option value="7.3"  {% if PhpVersion == "7.3" %} selected {% endif %}>7.3</option>
+                  <option value="7.2" {% if PhpVersion == "7.2" %} selected {% endif %}>7.2</option>
+                </select>
+            </div>
+          </div>
+          {% endif %}
+
+          {% if ServerType == 'nginx' %}
+          <input type="hidden" name="webserver_type" value="{{ServerType}}" />
+          {% endif %}
+          {% if ServerType == 'apache2' %}
+          <input type="hidden" name="webserver_type" value="{{ServerType}}" />
+          {% endif %}
+          {% if ServerType == 'lemp' %}
+          <input type="hidden" name="webserver_type" value="nginx" />
+          {% endif %}
+          {% if ServerType == 'lamp' %}
+          <input type="hidden" name="webserver_type" value="apache2" />
+          {% endif %}
+
+          {% if ServerType == 'lemp' %}
+          <div class="form-group row">
+            <label class="col-sm-2 col-form-label"
+              >MySQL root password*</label
+            >
+            <div class="col-sm-10">
+                <input type="password" class="form-control" required name="mysql_root_password" value="{{MySqlRootPassword}}" />
+            </div>
+          </div>
+
+          <div class="form-group row">
+            <label class="col-sm-2 col-form-label"
+              >Confirm MySQL Root Password*</label
+            >
+            <div class="col-sm-10">
+                <input type="password" class="form-control" required name="confirm_mysql_root_password" value="{{MySqlRootPassword}}" />
+            </div>
+          </div>
+          {% endif %}
+          
+          {% if ServerType == 'lamp' %}
+          <div class="form-group row">
+            <label class="col-sm-2 col-form-label"
+              >MySQL root password*</label
+            >
+            <div class="col-sm-10">
+                <input type="password" class="form-control" required name="mysql_root_password"  value="{{MySqlRootPassword}}" />
+            </div>
+          </div>
+
+          <div class="form-group row">
+            <label class="col-sm-2 col-form-label"
+              >Confirm MySQL Root Password*</label
+            >
+            <div class="col-sm-10">
+                <input type="password" class="form-control" required name="confirm_mysql_root_password" value="{{MySqlRootPassword}}" />
+            </div>
+          </div>
+          {% endif %} 
+
+          {% if ServerType == 'mysql' %}
+          <div class="form-group row">
+            <label class="col-sm-2 col-form-label"
+              >MySQL root password*</label
+            >
+            <div class="col-sm-10">
+                <input type="password" class="form-control" required name="mysql_root_password" value="{{MySqlRootPassword}}" />
+            </div>
+          </div>
+
+          <div class="form-group row">
+            <label class="col-sm-2 col-form-label"
+              >Confirm MySQL Root Password*</label
+            >
+            <div class="col-sm-10">
+                <input type="password" class="form-control" required name="confirm_mysql_root_password" value="{{MySqlRootPassword}}" />
+            </div>
+          </div>
+          {% endif %} 
+          <div class="row mb-4 mt-4">
+            <div class="col-md-6">
+                  <label>SSH username*</label>
+                <input type="text" class="form-control" required name="ssh_username" value="{{SSHUsername}}" />
+
+            </div>
+
+            <div class="col-md-6">
+      
+
+              <label>New SSH username* <i class="fas fa-question-circle" title="For better security - an SSH user will be created and root will be disabled. You can then login with the user specificed here."></i></label>
+              <input type="text" class="form-control" required name="new_ssh_username" value="{{NewSSHUsername}}" />
+
+
+            </div>
+
+          </div>
+
+          <br />
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group row">
+                <label class="col-sm-2 col-form-label"
+                  >SSH Port*</label
+                >
+                <div class="col-sm-10">
+                    <input type="number" class="form-control" id="ssh_port" required name="ssh_port" value="{{SshPort}}" />
+             
+                </div>
+              </div>
+    
+              <div class="form-group row">
+                <label class="col-sm-2 col-form-label"
+                  >New SSH Port* <i class="fas fa-question-circle" title="Scriptables will change the default SSH port from 22 to whatever you specify here."></i></label
+                >
+                <div class="col-sm-10">
+                    <input type="number" class="form-control" id="new_ssh_port" required name="new_ssh_port" value="{{NewSshPort}}" />
+            
+                </div>
+              </div>
+            </div>
+ 
+            <div class="col-md-6">
+              <div class="form-group row">
+    
+                <div class="col-sm-12">
+                    <textarea name="apt_packages" id="apt_packages" class="form-control" placeholder="Comma seperated list of any additional apt packages you want to install.">{{AptPackages}}</textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group row">
+            <div class="col-md-12">
+                <label> SSL & Cache options {% if ServerType == 'cache' %} * (select redis or memcache){% endif %} :</label><br />
+                <input type="checkbox"  name="certbot" {% if Certbot == 1 %}checked{% endif %}/> Certbot &nbsp;&nbsp;&nbsp;
+                <input type="checkbox" name="redis" {% if Redis== 1 %}checked{% endif %}/> Redis &nbsp;&nbsp;&nbsp;
+                <input type="checkbox"  name="memcache" {% if Memcache== 1 %}checked{% endif %}/> Memcache
+
+
+            </div>
+          </div>
+        </div>
+
+
+        <div class="card-footer">
+          <button type="submit" class="btn btn-primary">{{actionType}}</button>
+
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function togglePasswordVisibility(name, event) {
+    event.preventDefault();
+      var passwordInput = document.getElementById(name);
+      var toggleIcon = document.querySelector(".toggle-icon");
+
+      if (passwordInput.type === "password") {
+          passwordInput.type = "text";
+          toggleIcon.classList.add("active");
+      } else {
+          passwordInput.type = "password";
+          toggleIcon.classList.remove("active");
+      }
+  }
+</script>
