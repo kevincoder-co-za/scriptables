@@ -1,0 +1,189 @@
+<html>
+<head>
+<title>{{title}}</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="_csrf_token" content="{{_csrf_token}}" />
+<link rel="stylesheet" href="/static/bower_components/fontawesome/css/all.min.css" />
+<link rel="stylesheet" href="/static/bower_components/bootstrap/dist/css/bootstrap.min.css" />
+
+<style>
+.login-page
+{
+  background-color:#e5e7ed
+}
+.login-page main
+{
+  width:100%;
+  max-width:460px;
+  margin:8% auto 5%
+}
+.login-block
+{
+  background-color:#fff;
+  padding:60px;
+  -webkit-box-shadow:0 3px 50px 0 rgba(0,0,0,.1);
+  box-shadow:0 3px 50px 0 rgba(0,0,0,.1);
+  text-align:center;
+  border-radius:5px
+}
+.login-block h1,.login-block h6
+{
+  font-family:Open Sans,sans-serif;
+  color:#96a2b2;
+  letter-spacing:1px
+}
+.login-block h1
+{
+  font-size:22px;
+  margin-bottom:60px;
+  margin-top:40px
+}
+.login-block h6
+{
+  font-size:11px;
+  text-transform:uppercase;
+  margin-top:0
+}
+.login-block .form-group
+{
+  margin-top:15px;
+  margin-bottom:15px;
+}
+
+.login-block input:-webkit-autofill
+{
+  -webkit-box-shadow:0 0 0 1000px #fff inset;
+  -webkit-text-fill-color:#818a91;
+  -webkit-transition:none;
+  -o-transition:none;
+  transition:none;
+}
+.login-block .input-group-addon
+{
+  color:#29aafe;
+  font-size:19px;
+  opacity:.5
+}
+.login-block .btn-block
+{
+  margin-top:30px;
+  padding:15px;
+  background:#29aafe;
+  border-color:#29aafe;
+}
+.login-block .hr-xs
+{
+  margin-top:5px;
+  margin-bottom:5px
+}
+.login-footer
+{
+  margin-top:60px;
+  opacity:.5;
+  -webkit-transition:opacity .3s ease-in-out;
+  -o-transition:opacity .3s ease-in-out;
+  transition:opacity .3s ease-in-out
+}
+.login-footer:hover
+{
+  opacity:1
+}
+.login-links
+{
+  padding:15px 5px 0;
+  font-size:13px;
+  color:#96a2b2
+}
+.login-links:after
+{
+  content:'';
+  display:table;
+  clear:both
+}
+.login-links a
+{
+  color:#96a2b2;
+  opacity:.9
+}
+.login-links a:hover
+{
+  color:#29aafe;
+  opacity:1
+}
+@media (max-width:767px)
+{
+  .login-page main
+  {
+    position:static;
+    top:auto;
+    left:auto;
+    -webkit-transform:none;
+    -o-transform:none;
+    transform:none;
+    padding:30px 15px
+  }
+  .login-block{padding:20px}}
+
+</style>
+</head>
+<body>
+  <body class="login-page">
+
+
+    <main>
+
+      <div class="login-block">
+        <img src="/static/img/logo.png" alt="Scanfcode">
+        <h1>{{title}}</h1>
+                  {% if errors is defined %}
+            <div class="alert alert-danger alert-dismissible fade show">
+              <button
+                type="button"
+                class="close"
+                data-dismiss="alert"
+                data-bs-dismiss="alert"
+                aria-label="Close"
+              >
+                ×
+              </button>
+              <h5>
+                <i class="icon fas fa-ban"></i> Oops! - please review the
+                following errors and try again
+              </h5>
+              <ol>
+                {% for e in errors %}
+                <li>{{e}}</li>
+                {% endfor %}
+              </ol>
+            </div>
+            {% endif %} 
+            {%if successMsg is defined %}
+            <div class="alert alert-success alert-dismissible fade show">
+              <button
+                type="button"
+                class="close"
+                data-dismiss="alert"
+                aria-label="Close"
+                data-bs-dismiss="alert"
+              >
+                ×
+              </button>
+              <h5><i class="icon fas fa-check"></i> Success!</h5>
+              {{successMsg}}
+            </div>
+       
+            {% endif %}
+
+            
+            {{view}}
+
+      </div>
+
+
+    </main>
+    <script src="/static/bower_components/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/bower_components/fontawesome/js/all.min.js"> </script>
+</body>
+</html>

@@ -24,7 +24,7 @@ export SMTP_FROM_EMAIL="Scriptables <noreply@test.com>"
 export TZ=Africa/Johannesburg
 export SCRIPTABLES_SERVER_DSN_HOST=0.0.0.0
 export SCRIPTABLES_SERVER_DSN_PORT=3001
-export VERBOSE_LOGS=yes
+export VERBOSE_LOG=yes
 export GIN_MODE=release
 
 air
