@@ -1,3 +1,4 @@
+
 # Scriptables
 
 Scriptables is an open source orchestration tool that takes away the pain of setting up and managing production servers. In just a few minutes you can build app servers, deploy code from GIT, manage your firewall, setup crons and more - all while using a friendly web interface.
@@ -7,7 +8,7 @@ While Scriptables is platform agnostic, we love PHP and offer full support for L
 
 **Screenshot**:
 
-![](http://127.0.0.1:8000/static/img/build-server.png)
+![](https://plexscriptables.com/static/img/build-server.png)
 
 
 ## Dependencies
@@ -16,7 +17,7 @@ Scriptables is built using the GIN framework. A popular Golang framework for bui
 
 ## Documentation & Installation
 
-Detailed documentation and instructions on how to install can be found ![here](https://scriptables.gitbook.io/)
+Detailed documentation and instructions on how to install can be found: https://scriptables.gitbook.io/
 
 ## Known issues
 
