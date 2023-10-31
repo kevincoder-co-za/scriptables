@@ -1,4 +1,5 @@
 
+
 # Scriptables
 
 Scriptables is an open source orchestration tool that takes away the pain of setting up and managing production servers. In just a few minutes you can build app servers, deploy code from GIT, manage your firewall, setup crons and more - all while using a friendly web interface.
@@ -19,9 +20,18 @@ Scriptables is built using the GIN framework. A popular Golang framework for bui
 
 Detailed documentation and instructions on how to install can be found: https://scriptables.gitbook.io/
 
+## Quick start
+
+ - Clone this repository locally and navigate to the build folder.  Next
+ -  Rename the "example.env" to ".env" . Change the settings accordingly (see docs above for help). Initially the most important setting to change is the encryption key.
+ - Run:  `docker-compose up -d --build`
+ - Navigate to : http://127.0.0.1:3001/users/register
+
 ## Known issues
 
-Multiple PHP versions is currently not supported on Ubuntu 23.04.
+ - Multiple PHP versions is currently not supported on Ubuntu 23.04.
+ - CSRF random expiry warning - just hard refresh the page if you see a "session expired" message.
+ - DB - need to move to app level instead of per request.
 
 ## Getting help
 
@@ -31,3 +41,4 @@ Please use the issue tracker to report bugs and new feature requests. You can al
 ## Getting involved
 
 We currently are working on a structured way to contribute. In the interim, simply branch of main and submit a pull request.
+
