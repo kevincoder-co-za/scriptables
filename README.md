@@ -14,7 +14,7 @@ While Scriptables is platform agnostic, we love PHP and offer full support for L
 
 ## Dependencies
 
-Scriptables is built using the GIN framework. A popular Golang framework for built web apis. Scriptables uses both redis and MySQL. We provide a convenient docker-compose file to run everything.
+Scriptables is built using the GIN framework. A popular Golang framework for building web apis. Scriptables uses both redis and MySQL. We provide a convenient docker-compose file to run everything.
 
 ## Documentation & Installation
 
