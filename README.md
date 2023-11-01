@@ -33,6 +33,7 @@ Detailed documentation and instructions on how to install can be found: https://
  - CSRF random expiry warning - just hard refresh the page if you see a "session expired" message.
  - DB - need to move to app level instead of per request.
  - Service workers currently not 100% implemented.
+ - Need to upgrade the template to use tailwind and remove bower.
 
 ## Getting help
 
