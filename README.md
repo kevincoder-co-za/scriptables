@@ -41,5 +41,5 @@ Please use the issue tracker to report bugs and new feature requests. You can al
 
 ## Supporting the development of Scriptables
 
-If you use Scriptables commercially, please consider supporting us here:![](https://store.plexscriptables.com/checkout). Every dollar is appreciated and counts and will go a long way toward making Scriptables that much better.
+If you use Scriptables commercially, please consider supporting us: ![here](https://store.plexscriptables.com/checkout) . Every dollar is appreciated and counts and will go a long way toward making Scriptables that much better.
 
