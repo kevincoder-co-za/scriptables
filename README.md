@@ -14,7 +14,7 @@ While Scriptables is platform agnostic, we love PHP and offer full support for L
 
 ## Dependencies
 
-Scriptables is built using the GIN framework. A popular Golang framework for building web APIs. Scriptables uses both Redis and MySQL. We provide a convenient docker-compose file to run everything.
+Scriptables are built using the GIN framework. A popular Golang framework for building web APIs. Scriptables uses both Redis and MySQL. We provide a convenient docker-compose file to run everything.
 
 ## Documentation & Installation
 
@@ -29,7 +29,7 @@ Detailed documentation and instructions on how to install can be found: https://
 
 ## Known issues
 
- - Multiple PHP versions is currently not supported on Ubuntu 23.04.
+ - Multiple PHP versions are currently not supported on Ubuntu 23.04.
  - CSRF random expiry warning - just hard refresh the page if you see a "session expired" message.
  - DB - needs to move to app level instead of per request.
  - Service workers currently not 100% implemented.
@@ -39,8 +39,7 @@ Detailed documentation and instructions on how to install can be found: https://
 
 Please use the issue tracker to report bugs and new feature requests. You can also visit us at https://plexscriptables.com
 
+## Supporting the development of Scriptables
 
-## Getting involved
-
-We currently are working on a structured way to contribute. In the interim, simply branch of main and submit a pull request.
+If you use Scriptables commercially, please consider supporting us here:![](https://store.plexscriptables.com/checkout). Every dollar is appreciated and counts and will go a long way toward making Scriptables that much better.
 
