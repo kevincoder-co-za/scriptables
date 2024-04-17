@@ -11,7 +11,6 @@ While Scriptables is platform agnostic, we love PHP and offer full support for L
 
 ![](https://plexscriptables.com/static/img/build-server.png)
 
-
 ## Dependencies
 
 Scriptables are built using the GIN framework. A popular Golang framework for building web APIs. Scriptables uses both Redis and MySQL. We provide a convenient docker-compose file to run everything.
@@ -37,9 +36,9 @@ Detailed documentation and instructions on how to install can be found: https://
 
 ## Getting help
 
-Please use the issue tracker to report bugs and new feature requests. You can also visit us at https://plexscriptables.com
+Please use the issue tracker to report bugs and new feature requests.
 
 ## Supporting the development of Scriptables
 
-If you use Scriptables commercially, please consider supporting us: ![here](https://store.plexscriptables.com/checkout) . Every dollar is appreciated and counts and will go a long way toward making Scriptables that much better.
+If you use Scriptables commercially or just love this awesome tool, please consider supporting us here: https://store.plexscriptables.com/checkout . Every dollar is appreciated and will go a long way toward making Scriptables that much better.
 
