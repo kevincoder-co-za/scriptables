@@ -5,10 +5,8 @@ services:
     image: redis:6.2-alpine
     restart: always
     command: redis-server --save 20 1 --loglevel warning
-    volumes: 
+    volumes:
       - scriptables-redis:/data
-    ports:
-      - 127.0.0.1:6379:6379
 
   scriptables-mysqldb:
     container_name: scriptables-db

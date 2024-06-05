@@ -12,6 +12,20 @@ import (
 
 func SendEmail(subject string, from string, recipients []string, vars gonja.Context, template string) {
 
+	smtpHost := os.Getenv("SMTP_HOST")
+	smtpPort := os.Getenv("SMTP_PORT")
+	smtpUsername := os.Getenv("SMTP_USERNAME")
+	smtpPassword := os.Getenv("SMTP_PASSWORD")
+
+	if from == "" {
+		from = os.Getenv("SMTP_FROM_EMAIL")
+	}
+
+	if smtpUsername == "xxxx" {
+		fmt.Println("Oops! SMTP mail is not configured. Skipping sending this email.")
+		return
+	}
+
 	defer func() {
 
 		if r := recover(); r != nil {
@@ -33,15 +47,6 @@ func SendEmail(subject string, from string, recipients []string, vars gonja.Cont
 
 	if err != nil {
 		fmt.Println(err)
-	}
-
-	smtpHost := os.Getenv("SMTP_HOST")
-	smtpPort := os.Getenv("SMTP_PORT")
-	smtpUsername := os.Getenv("SMTP_USERNAME")
-	smtpPassword := os.Getenv("SMTP_PASSWORD")
-
-	if from == "" {
-		from = os.Getenv("SMTP_FROM_EMAIL")
 	}
 
 	message := "From: " + from + "\n"

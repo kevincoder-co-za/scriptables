@@ -21,18 +21,14 @@ Detailed documentation and instructions on how to install can be found: https://
 
 ## Quick start
 
- - Clone this repository locally.
- -  Rename the "example.env" to ".env". Change the settings accordingly (see docs above for help). Initially, the most important setting to change is the encryption key.
- - Run:  `docker-compose up -d --build`
- - Navigate to: http://127.0.0.1:3001/users/register
+ - Run: curl -fsSL https://raw.githubusercontent.com/plexcorp-pty-ltd/scriptables/autoprovision.sh | bash
+ - Navigate to: http://127.0.0.1:3012/users/register
 
 ## Known issues
 
  - Multiple PHP versions are currently not supported on Ubuntu 23.04.
  - CSRF random expiry warning - just hard refresh the page if you see a "session expired" message.
- - DB - needs to move to app level instead of per request.
  - Service workers currently not 100% implemented.
- - Need to upgrade the template to use tailwind and remove bower.
 
 ## Getting help
 
