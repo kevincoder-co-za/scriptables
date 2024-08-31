@@ -136,6 +136,7 @@ func (c *Controller) GetSessionValue(key string, e echo.Context) (interface{}, e
 		return nil, err
 	}
 
+	fmt.Println(sess.Values)
 	value, ok := sess.Values[key]
 	if ok {
 		return value, nil
@@ -156,6 +157,7 @@ func (c *Controller) SetSessionValues(values map[string]interface{}, e echo.Cont
 
 	sess.Save(e.Request(), e.Response())
 	if err := sess.Save(e.Request(), e.Response()); err != nil {
+		fmt.Println(err)
 		return false, err
 	}
 
