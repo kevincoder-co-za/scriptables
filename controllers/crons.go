@@ -16,8 +16,8 @@ import (
 func (c *Controller) CreateCron(gctx echo.Context) error {
 	var countServers int64
 	sessUser := c.GetSessionUser(gctx)
-
-	c.GetDB(gctx).Table("servers").Where(
+	db := models.GetDB()
+	db.Table("servers").Where(
 		"status=? and team_id=?", models.STATUS_COMPLETE, sessUser.TeamId).Count(&countServers)
 	if countServers == 0 {
 		return c.Render("general/warning", gonja.Context{
@@ -28,7 +28,7 @@ func (c *Controller) CreateCron(gctx echo.Context) error {
 	}
 
 	servers := []models.Server{}
-	c.GetDB(gctx).Where("team_id=?", sessUser.TeamId).Find(&servers)
+	db.Where("team_id=?", sessUser.TeamId).Find(&servers)
 
 	return c.Render("crons/form", gonja.Context{
 		"title":           "Setup cron",
@@ -55,7 +55,8 @@ func (c *Controller) SaveCron(gctx echo.Context) error {
 	server_id, _ := strconv.ParseInt(gctx.FormValue("server_id"), 10, 64)
 	errors := []string{}
 	servers := []models.Server{}
-	c.GetDB(gctx).Where("team_id=?", sessUser.TeamId).Find(&servers)
+	db := models.GetDB()
+	db.Where("team_id=?", sessUser.TeamId).Find(&servers)
 
 	ctx := gonja.Context{
 
@@ -100,7 +101,7 @@ func (c *Controller) SaveCron(gctx echo.Context) error {
 			UpdatedAt:      time.Now(),
 			TeamID:         sessUser.TeamId,
 		}
-		err := c.GetDB(gctx).Create(&cron)
+		err := db.Create(&cron)
 
 		if err != nil && utils.LogVerbose() {
 			fmt.Println(err)
@@ -108,7 +109,7 @@ func (c *Controller) SaveCron(gctx echo.Context) error {
 
 		c.FlashSuccess(gctx, "Successfully queued cron for deployment. Please check the logs for progress.")
 		gctx.Redirect(http.StatusFound, "/crons")
-		return
+		return nil
 	} else {
 		ctx["errors"] = errors
 	}
@@ -131,7 +132,7 @@ func (c *Controller) Crons(gctx *gin.Context) {
 	}
 
 	search := gctx.Query("search")
-	crons := models.GetCrons(c.GetDB(gctx), page, perPage, search, sessUser.TeamId)
+	crons := models.GetCrons(page, perPage, search, sessUser.TeamId)
 	searchQuery := ""
 
 	if search != "" {
@@ -158,9 +159,10 @@ func (c *Controller) EditCron(gctx *gin.Context) {
 	cronId, _ := strconv.ParseInt(gctx.Param("id"), 10, 64)
 	sessUser := c.GetSessionUser(gctx)
 	var cron models.Cron
+	db := models.GetDB()
 
 	if cronId != 0 {
-		c.GetDB(gctx).Where("id=?", cronId).Where("team_id=?", sessUser.TeamId).First(&cron)
+		db.Where("id=?", cronId).Where("team_id=?", sessUser.TeamId).First(&cron)
 	}
 
 	if cron.ID == 0 {
@@ -170,7 +172,7 @@ func (c *Controller) EditCron(gctx *gin.Context) {
 	}
 
 	servers := []models.Server{}
-	c.GetDB(gctx).Where("team_id=?", sessUser.TeamId).Find(&servers)
+	db.Where("team_id=?", sessUser.TeamId).Find(&servers)
 
 	c.Render("crons/form", gonja.Context{
 		"title":           "Setup cron",
@@ -195,14 +197,14 @@ func (c *Controller) UpdateCron(gctx *gin.Context) {
 	errors := []string{}
 	servers := []models.Server{}
 	sessUser := c.GetSessionUser(gctx)
-
-	c.GetDB(gctx).Where("team_id=?", sessUser.TeamId).Find(&servers)
+	db := models.GetDB()
+	db.Where("team_id=?", sessUser.TeamId).Find(&servers)
 
 	cronId, _ := strconv.ParseInt(gctx.Param("id"), 10, 64)
 	var cron models.Cron
 
 	if cronId != 0 {
-		c.GetDB(gctx).Where("id=?", cronId).Where("team_id =?", sessUser.TeamId).First(&cron)
+		db.Where("id=?", cronId).Where("team_id =?", sessUser.TeamId).First(&cron)
 	}
 
 	if cron.ID == 0 {
@@ -249,7 +251,7 @@ func (c *Controller) UpdateCron(gctx *gin.Context) {
 		cron.CronName = cron_name
 		cron.CronExpression = cron_expression
 
-		err := c.GetDB(gctx).Save(&cron)
+		err := db.Save(&cron)
 
 		if err != nil && utils.LogVerbose() {
 			fmt.Println(err)
@@ -268,6 +270,7 @@ func (c *Controller) UpdateCron(gctx *gin.Context) {
 func (c *Controller) DisableCron(gctx *gin.Context) {
 	cronId, _ := strconv.ParseInt(gctx.FormValue("id"), 10, 64)
 	sessUser := c.GetSessionUser(gctx)
+	db := models.GetDB()
 
 	if cronId == 0 {
 		c.FlashError(gctx, "Invalid Cron ID - please try again.")
@@ -275,7 +278,7 @@ func (c *Controller) DisableCron(gctx *gin.Context) {
 		return
 	}
 
-	c.GetDB(gctx).Exec("UPDATE crons SET deleted_at = NOW(), status = ? WHERE id = ? and team_id = ?",
+	db.Exec("UPDATE crons SET deleted_at = NOW(), status = ? WHERE id = ? and team_id = ?",
 		models.STATUS_QUEUED, cronId, sessUser.TeamId)
 	c.FlashSuccess(gctx, "Successfully queued cron for deletion.")
 	gctx.Redirect(http.StatusFound, "/crons")
@@ -285,11 +288,12 @@ func (c *Controller) RetryCronBuild(gctx *gin.Context) {
 	retryBuild := gctx.FormValue("retryBuildId")
 	sessUser := c.GetSessionUser(gctx)
 	updated := false
+	db := models.GetDB()
 
 	if retryBuild != "" {
 		sid, err := strconv.ParseInt(retryBuild, 10, 64)
 		if err == nil && sid != 0 {
-			c.GetDB(gctx).Exec("UPDATE crons set status='queued' where id=? and team_id = ?", sid, sessUser.TeamId)
+			db.Exec("UPDATE crons set status='queued' where id=? and team_id = ?", sid, sessUser.TeamId)
 			updated = true
 		}
 	}

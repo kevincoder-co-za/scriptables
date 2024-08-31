@@ -25,24 +25,7 @@ func RunJobs() {
 
 	}()
 
-	db, err := models.GetAppDB()
-
-	if err == nil {
-		sqlDB, err := db.DB()
-
-		if err == nil {
-			sqlDB.SetMaxIdleConns(10)
-			sqlDB.SetMaxOpenConns(100)
-			sqlDB.SetConnMaxLifetime(time.Minute * 30)
-			defer sqlDB.Close()
-		}
-	}
-
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
+	db := models.GetDB()
 	console.DeployBranch(db)
 	console.BuildServers(db)
 	console.BuildSites(db)

@@ -121,7 +121,7 @@ func (c *Controller) GetSessionUser(gctx echo.Context) models.User {
 	if !ok {
 		return user
 	}
-	c.GetDB(gctx).Raw("SELECT id, name, email, verified, team_id FROM users where id = ?", userId.(int64)).Scan(&user)
+	models.GetDB().Raw("SELECT id, name, email, verified, team_id FROM users where id = ?", userId.(int64)).Scan(&user)
 	return user
 }
 

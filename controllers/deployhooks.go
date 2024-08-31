@@ -21,9 +21,9 @@ func (c *Controller) DeployWebhookSite(gctx *gin.Context) {
 		return
 	}
 
-	db := c.GetDB(gctx)
+	db := models.GetDB()
 
-	site := models.GetSiteByTokenAndId(db, token, siteId)
+	site := models.GetSiteByTokenAndId(token, siteId)
 
 	if site.ID == 0 {
 		gctx.JSON(http.StatusBadRequest, "Invalid SID or token. Cannot find site.")

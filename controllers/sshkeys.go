@@ -33,7 +33,7 @@ func (c *Controller) EditSShKey(gctx *gin.Context) {
 	}
 
 	var sshkey models.SshKey
-	c.GetDB(gctx).Where("id = ? and team_id=?", sshkeyId, sessUser.TeamId).First(&sshkey)
+	models.GetDB().Where("id = ? and team_id=?", sshkeyId, sessUser.TeamId).First(&sshkey)
 
 	if sshkey.ID == 0 {
 		c.FlashError(gctx, "Sorry, invalid SSH key ID.")
@@ -89,7 +89,7 @@ func (c *Controller) SaveSShKey(gctx *gin.Context) {
 	}
 
 	if saveForm {
-		db := c.GetDB(gctx)
+		db := models.GetDB()
 		sessUser := c.GetSessionUser(gctx)
 		key := models.SshKey{
 			Name:       name,
@@ -130,7 +130,7 @@ func (c *Controller) SshKeys(gctx *gin.Context) {
 
 	search := gctx.Query("search")
 	sessUser := c.GetSessionUser(gctx)
-	keys := models.GetSshKeysList(c.GetDB(gctx), page, perPage, search, sessUser.TeamId)
+	keys := models.GetSshKeysList(page, perPage, search, sessUser.TeamId)
 	searchQuery := ""
 
 	if search != "" {

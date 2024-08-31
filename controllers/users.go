@@ -21,7 +21,7 @@ func (c *Controller) MyProfile(gctx *gin.Context) {
 	userID := session.Get("user_id")
 
 	var user models.User
-	c.GetDB(gctx).Table("users").Where("id=?", userID).First(&user)
+	models.GetDB().Table("users").Where("id=?", userID).First(&user)
 
 	vars := gonja.Context{
 		"title":     "My Profile",
@@ -40,9 +40,10 @@ func (c *Controller) UpdateProfile(gctx *gin.Context) {
 
 	session := sessions.Default(gctx)
 	userID := session.Get("user_id")
+	db := models.GetDB()
 
 	var user models.User
-	c.GetDB(gctx).Table("users").Where("id", userID).First(&user)
+	db.Table("users").Where("id", userID).First(&user)
 
 	if user.ID == 0 {
 		c.FlashError(gctx, "Sorry, failed to fetch your profile. Please try again, if the problem persists. Log out and back in again.")
@@ -55,8 +56,6 @@ func (c *Controller) UpdateProfile(gctx *gin.Context) {
 		gctx.Redirect(http.StatusFound, "/user/profile")
 		return
 	}
-
-	db := c.GetDB(gctx)
 
 	if email != user.Email {
 		found := 0
@@ -84,8 +83,9 @@ func (c *Controller) ShowQrCodePng(gctx *gin.Context) {
 	userID := session.Get("user_id")
 
 	var user models.User
-	c.GetDB(gctx).Where("id=?", userID).Find(&user)
-	qrcodeBytes, err := utils.ShowQrCode(user.Email, c.GetDB(gctx))
+	db := models.GetDB()
+	db.Where("id=?", userID).Find(&user)
+	qrcodeBytes, err := utils.ShowQrCode(user.Email, db)
 
 	if err != nil {
 		c.FlashError(gctx, "Sorry, failed to generate 2Factor QR code. Please try again.")
@@ -99,13 +99,6 @@ func (c *Controller) ShowQrCodePng(gctx *gin.Context) {
 }
 
 func (c *Controller) CheckLogin(gctx *gin.Context) {
-
-	if !c.TestCSRFToken(gctx) {
-		c.FlashError(gctx, "Sorry, your session has expired. Please try refreshing this page.")
-		gctx.Redirect(http.StatusFound, "/users/login")
-		return
-	}
-
 	vars := gonja.Context{
 		"title": "Login",
 	}
@@ -118,7 +111,7 @@ func (c *Controller) CheckLogin(gctx *gin.Context) {
 		vars["errors"] = []string{"Please enter a valid email address and password."}
 	}
 
-	db := c.GetDB(gctx)
+	db := models.GetDB()
 	var user *models.User
 	db.Table("users").Where("email  = ?", email).First(&user)
 
@@ -133,7 +126,7 @@ func (c *Controller) CheckLogin(gctx *gin.Context) {
 	}
 
 	if len(vars["errors"].([]string)) == 0 {
-		user, err := models.Authenticate(db, email, password, gctx.Request.RemoteAddr)
+		user, err := models.Authenticate(email, password, gctx.Request.RemoteAddr)
 		if err != nil {
 			vars["errors"] = []string{err.Error()}
 		}
@@ -158,13 +151,7 @@ func (c *Controller) TwoFactorAuthenticate(gctx *gin.Context) {
 		"title": "Two Factor Login",
 	}
 
-	if !c.TestCSRFToken(gctx) {
-		c.FlashError(gctx, "Sorry, your session has expired. Please try refreshing this page.")
-		gctx.Redirect(http.StatusFound, "/users/login")
-		return
-	}
-
-	db := c.GetDB(gctx)
+	db := models.GetDB()
 
 	vars["errors"] = []string{}
 
@@ -195,7 +182,7 @@ func (c *Controller) TwoFactorAuthenticate(gctx *gin.Context) {
 	}
 
 	if len(vars["errors"].([]string)) == 0 {
-		user, err := models.Authenticate(db, email, password, gctx.Request.RemoteAddr)
+		user, err := models.Authenticate(email, password, gctx.Request.RemoteAddr)
 		if err != nil {
 			vars["errors"] = []string{err.Error()}
 		}
@@ -247,16 +234,11 @@ func (c *Controller) ForgotPassword(gctx *gin.Context) {
 	}
 
 	if gctx.Request.Method == http.MethodPost {
-		if !c.TestCSRFToken(gctx) {
-			c.FlashError(gctx, "Sorry, your session has expired. Please try refreshing this page.")
-			gctx.Redirect(http.StatusFound, "/users/login")
-			return
-		}
 		email := gctx.FormValue("email")
-		isValidEmail := models.IsValidEmail(c.GetDB(gctx), email, gctx.Request.RemoteAddr)
+		isValidEmail := models.IsValidEmail(email, gctx.Request.RemoteAddr)
 
 		if isValidEmail {
-			models.SendPasswordResetToken(c.GetDB(gctx), email, "Password reset request", "forgotpassword")
+			models.SendPasswordResetToken(email, "Password reset request", "forgotpassword")
 		}
 
 		vars["successMsg"] = "Please check your email for further instructions."
@@ -277,11 +259,6 @@ func (c *Controller) ChangePassword(gctx *gin.Context) {
 
 	hasErrors := false
 	if gctx.Request.Method == http.MethodPost {
-		if !c.TestCSRFToken(gctx) {
-			c.FlashError(gctx, "Sorry, your session has expired. Please try refreshing this page.")
-			gctx.Redirect(http.StatusFound, "/users/login")
-			return
-		}
 		email := gctx.FormValue("email")
 		password := gctx.FormValue("password")
 		passwordAgain := gctx.FormValue("passwordAgain")
@@ -289,13 +266,13 @@ func (c *Controller) ChangePassword(gctx *gin.Context) {
 			hasErrors = true
 			vars["errors"] = []string{"Ooops!, password and confirm password do not match. Please try again."}
 		} else {
-			user := models.GetUserByEmailToken(c.GetDB(gctx), email, token)
+			user := models.GetUserByEmailToken(email, token)
 
 			if user.Email == email {
 				user.Password, _ = utils.HashPassword(password)
 				user.ResetToken = ""
 
-				models.UpdateUserPassword(c.GetDB(gctx), &user)
+				models.UpdateUserPassword(&user)
 				vars["successMsg"] = "Thank you, password successfully reset - you may now login."
 
 			} else {
@@ -348,7 +325,7 @@ func (c *Controller) ListUsers(gctx *gin.Context) {
 		"addBtn":      "<a href=\"/users/create\" data-toggle=\"modal\" data-target=\"#newUserModal\" class=\"btn-sm btn-success\" style=\"vertical-align:middle;\">ADD User</a>",
 	}
 
-	vars["users"] = models.GetUsersList(c.GetDB(gctx), page, perPage, search, sessUser.TeamId)
+	vars["users"] = models.GetUsersList(page, perPage, search, sessUser.TeamId)
 
 	c.Render("users/list", vars, gctx)
 
@@ -363,19 +340,19 @@ func (c *Controller) HandleUserActionsFormPost(gctx *gin.Context) {
 	}
 
 	if action == "deactivate" {
-		err := models.ToggleUserStatus(c.GetDB(gctx), id, 0, sessUser.TeamId)
+		err := models.ToggleUserStatus(id, 0, sessUser.TeamId)
 		if err == nil {
 			c.FlashSuccess(gctx, "Successfully disabled users access. They won't be able to login.")
 		}
 
 	} else if action == "activate" {
-		err := models.ToggleUserStatus(c.GetDB(gctx), id, 1, sessUser.TeamId)
+		err := models.ToggleUserStatus(id, 1, sessUser.TeamId)
 		if err == nil {
 			c.FlashSuccess(gctx, "Successfully enabled users access.")
 		}
 	} else if action == "sendpassword" {
 		email := gctx.FormValue("user_email")
-		models.SendPasswordResetToken(c.GetDB(gctx), email, "Password reset request", "forgotpassword")
+		models.SendPasswordResetToken(email, "Password reset request", "forgotpassword")
 		c.FlashSuccess(gctx, "Successfully sent user a password reset mail.")
 	} else if action == "newuser" {
 		email := strings.Trim(gctx.FormValue("email"), " ")
@@ -387,8 +364,8 @@ func (c *Controller) HandleUserActionsFormPost(gctx *gin.Context) {
 			password, _ := utils.HashPassword(utils.GenPassword())
 			u := models.User{Email: email, Name: name, CreatedAt: time.Now(), UpdatedAt: time.Now(),
 				Verified: 1, Password: password, TeamId: sessUser.TeamId}
-			c.GetDB(gctx).Create(&u)
-			models.SendPasswordResetToken(c.GetDB(gctx), email, "Your scriptables account is ready.", "newuser")
+			models.GetDB().Create(&u)
+			models.SendPasswordResetToken(email, "Your scriptables account is ready.", "newuser")
 			c.FlashSuccess(gctx, "Successfully created new user, they will get an email shortly to setup their login details.")
 		}
 	}
@@ -451,12 +428,6 @@ func (c *Controller) RegistrationComplete(gctx *gin.Context) {
 		"team":  team,
 	}
 
-	if !c.TestCSRFToken(gctx) {
-		c.FlashError(gctx, "Sorry, your session has expired. Please try refreshing this page.")
-		gctx.Redirect(http.StatusFound, "/users/login")
-		return
-	}
-
 	if password != passwordConfirmation {
 		errors = append(errors, "Password and password confirmation do not match.")
 	}
@@ -485,7 +456,7 @@ func (c *Controller) RegistrationComplete(gctx *gin.Context) {
 		user.Verified = 1
 		user.Name = name
 		user.Password = password
-		db := c.GetDB(gctx)
+		db := models.GetDB()
 
 		var userTeam models.Team
 		userTeam.Name = team

@@ -15,6 +15,7 @@ func (c *Controller) ServerLogs(gctx *gin.Context) {
 	serverId, _ := strconv.ParseInt(gctx.Param("id"), 10, 64)
 	page, err := strconv.Atoi(gctx.Query("page"))
 	sessUser := c.GetSessionUser(gctx)
+	db := models.GetDB()
 
 	if err != nil {
 		page = 1
@@ -31,10 +32,10 @@ func (c *Controller) ServerLogs(gctx *gin.Context) {
 		logLevelQuery = "&log_level=" + logLevel
 	}
 
-	logs := models.GetOperationLogs(c.GetDB(gctx), page, perPage, "server", serverId, logLevel, sessUser.TeamId)
+	logs := models.GetOperationLogs(db, page, perPage, "server", serverId, logLevel, sessUser.TeamId)
 
 	var server models.Server
-	c.GetDB(gctx).Where("id", serverId).Where("team_id=?", sessUser.TeamId).Find(&server)
+	db.Where("id", serverId).Where("team_id=?", sessUser.TeamId).Find(&server)
 	vars := gonja.Context{
 		"title":         "Server logs for: " + server.ServerName,
 		"logs":          logs,
@@ -54,8 +55,9 @@ func (c *Controller) ServerLogView(gctx echo.Context) error {
 	serverId, _ := strconv.ParseInt(gctx.Param("id"), 10, 64)
 	var log models.OperationLog
 	sessUser := c.GetSessionUser(gctx)
+	db := models.GetDB()
 
-	c.GetDB(gctx).Where("id = ? and entity='server' and team_id=?", serverId, sessUser.TeamId).First(&log)
+	db.Where("id = ? and entity='server' and team_id=?", serverId, sessUser.TeamId).First(&log)
 	log.Log = utils.Decrypt(log.Log)
 
 	return c.RenderWithoutLayout("logs/view_log", gonja.Context{
@@ -78,16 +80,18 @@ func (c *Controller) SiteLogs(gctx echo.Context) error {
 		perPage = 20
 	}
 
+	db := models.GetDB()
+
 	logLevel := gctx.Query("log_level")
 	logLevelQuery := ""
 	if logLevel != "" {
 		logLevelQuery = "&log_level=" + logLevel
 	}
 
-	logs := models.GetOperationLogs(c.GetDB(gctx), page, perPage, "site", siteId, logLevel, sessUser.TeamId)
+	logs := models.GetOperationLogs(page, perPage, "site", siteId, logLevel, sessUser.TeamId)
 
 	var site models.Site
-	c.GetDB(gctx).Where("id=? and team_id=?", siteId, sessUser.TeamId).Find(&site)
+	db.Where("id=? and team_id=?", siteId, sessUser.TeamId).Find(&site)
 	vars := gonja.Context{
 		"title":         "Site logs for: " + site.SiteName,
 		"logs":          logs,
@@ -106,12 +110,13 @@ func (c *Controller) SiteLogs(gctx echo.Context) error {
 func (c *Controller) SiteLogView(gctx echo.Context) error {
 	siteID, _ := strconv.ParseInt(gctx.Param("id"), 10, 64)
 	sessUser := c.GetSessionUser(gctx)
+	db := models.GetDB()
 
 	var log models.OperationLog
-	c.GetDB(gctx).Where("id = ? and entity='site' and team_id=?", siteID, sessUser.TeamId).First(&log)
+	db.Where("id = ? and entity='site' and team_id=?", siteID, sessUser.TeamId).First(&log)
 	log.Log = utils.Decrypt(log.Log)
 
-	site := models.GetSiteById(c.GetDB(gctx), log.EntityID, sessUser.TeamId)
+	site := models.GetSiteById(log.EntityID, sessUser.TeamId)
 	c.RenderWithoutLayout("logs/view_log", gonja.Context{
 		"log":       log.Log,
 		"highlight": "sites",
@@ -123,6 +128,7 @@ func (c *Controller) CronLogs(gctx *gin.Context) {
 	cronId, _ := strconv.ParseInt(gctx.Param("id"), 10, 64)
 	page, err := strconv.Atoi(gctx.Query("page"))
 	sessUser := c.GetSessionUser(gctx)
+	db := models.GetDB()
 
 	if err != nil {
 		page = 1
@@ -139,10 +145,10 @@ func (c *Controller) CronLogs(gctx *gin.Context) {
 		logLevelQuery = "&log_level=" + logLevel
 	}
 
-	logs := models.GetOperationLogs(c.GetDB(gctx), page, perPage, "cron", cronId, logLevel, sessUser.TeamId)
+	logs := models.GetOperationLogs(page, perPage, "cron", cronId, logLevel, sessUser.TeamId)
 
 	var cron models.Cron
-	c.GetDB(gctx).Where("id=? and team_id=?", cronId, sessUser.TeamId).Find(&cron)
+	db.Where("id=? and team_id=?", cronId, sessUser.TeamId).Find(&cron)
 	vars := gonja.Context{
 		"title":         "Cron logs for: " + cron.CronName,
 		"logs":          logs,
@@ -160,9 +166,10 @@ func (c *Controller) CronLogs(gctx *gin.Context) {
 func (c *Controller) CronLogView(gctx *gin.Context) {
 	cronId, _ := strconv.ParseInt(gctx.Param("id"), 10, 64)
 	sessUser := c.GetSessionUser(gctx)
+	db := models.GetDB()
 
 	var log models.OperationLog
-	c.GetDB(gctx).Where("id = ? and entity='cron' and team_id=?", cronId, sessUser.TeamId).First(&log)
+	db.Where("id = ? and entity='cron' and team_id=?", cronId, sessUser.TeamId).First(&log)
 	log.Log = utils.Decrypt(log.Log)
 
 	if log.ID == 0 {

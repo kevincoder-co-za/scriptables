@@ -20,8 +20,9 @@ import (
 func (c *Controller) CreateSite(gctx *gin.Context) {
 	var countServers int64
 	sessUser := c.GetSessionUser(gctx)
+	db := models.GetDB()
 
-	c.GetDB(gctx).Table("servers").Where("status=? AND team_id=?", models.STATUS_COMPLETE, sessUser.TeamId).Count(&countServers)
+	db.Table("servers").Where("status=? AND team_id=?", models.STATUS_COMPLETE, sessUser.TeamId).Count(&countServers)
 	if countServers == 0 {
 		c.Render("general/warning", gonja.Context{
 			"title":      "No active servers found",
@@ -31,10 +32,10 @@ func (c *Controller) CreateSite(gctx *gin.Context) {
 		return
 	}
 	servers := []models.Server{}
-	c.GetDB(gctx).Where("team_id=?", sessUser.TeamId).Find(&servers)
+	db.Where("team_id=?", sessUser.TeamId).Find(&servers)
 
 	sshKeys := []models.SshKey{}
-	c.GetDB(gctx).Where("team_id=?", sessUser.TeamId).Find(&sshKeys)
+	db.Where("team_id=?", sessUser.TeamId).Find(&sshKeys)
 
 	password := utils.GenPassword()
 	c.Render("sites/create", gonja.Context{
@@ -70,9 +71,11 @@ func (c *Controller) SaveSite(gctx *gin.Context) {
 	environment := gctx.FormValue("environment")
 	branch := gctx.FormValue("branch")
 
+	db := models.GetDB()
+
 	LetsEncryptCertificate := 0
 	servers := []models.Server{}
-	c.GetDB(gctx).Find(&servers)
+	db.Find(&servers)
 
 	if gctx.FormValue("letsencrypt_certificate") != "" && gctx.FormValue("letsencrypt_certificate") == "on" {
 		LetsEncryptCertificate = 1
@@ -157,7 +160,7 @@ func (c *Controller) SaveSite(gctx *gin.Context) {
 	}
 
 	var found int64
-	c.GetDB(gctx).Where("domain=?", domain, siteName).Count(&found)
+	db.Where("domain=?", domain, siteName).Count(&found)
 
 	if found > 0 {
 		errors = append(errors, "Sorry, domain already in use. You can have multiple subdomains but only one root domain.")
@@ -185,7 +188,7 @@ func (c *Controller) SaveSite(gctx *gin.Context) {
 			DeployToken:            strings.ReplaceAll(token.String(), "-", ""),
 			TeamId:                 sessUser.TeamId,
 		}
-		err := c.GetDB(gctx).Create(&site)
+		err := db.Create(&site)
 
 		if err != nil && utils.LogVerbose() {
 			fmt.Println(err)
@@ -226,7 +229,7 @@ func (c *Controller) Sites(gctx *gin.Context) {
 	}
 
 	search := gctx.Query("search")
-	sites := models.GetSitesList(c.GetDB(gctx), page, perPage, search, status, sessUser.TeamId)
+	sites := models.GetSitesList(page, perPage, search, status, sessUser.TeamId)
 	searchQuery := ""
 
 	if search != "" {
@@ -256,7 +259,7 @@ func (c *Controller) CreateSiteDeployKey(gctx *gin.Context) {
 	var site models.Site
 	sessUser := c.GetSessionUser(gctx)
 
-	c.GetDB(gctx).Where("id=? and team_id=?", siteId, sessUser.TeamId).First(&site)
+	models.GetDB().Where("id=? and team_id=?", siteId, sessUser.TeamId).First(&site)
 	if site.ID == 0 || site.TeamId != sessUser.TeamId {
 		c.FlashError(gctx, "Ooops, sorry seems like you do not have permission to access this site. Please try again.")
 		gctx.Redirect(http.StatusFound, "/sites")
@@ -291,7 +294,7 @@ func (c *Controller) GenerateDeployKey(gctx *gin.Context) {
 	var site models.Site
 	sessUser := c.GetSessionUser(gctx)
 
-	db := c.GetDB(gctx)
+	db := models.GetDB()
 	db.Where("id=? and team_id = ?", siteId, sessUser.TeamId).First(&site)
 
 	if site.ID == 0 || site.TeamId != sessUser.TeamId {
@@ -300,7 +303,7 @@ func (c *Controller) GenerateDeployKey(gctx *gin.Context) {
 		return
 	}
 
-	server := models.GetServer(db, site.ServerID, site.TeamId)
+	server := models.GetServer(site.ServerID, site.TeamId)
 
 	username := utils.Slugify(site.SiteName)
 	keyPath := models.GetSiteDeployPubKeyPath(siteId, site.SiteName, username)
@@ -323,7 +326,7 @@ func (c *Controller) GenerateDeployKey(gctx *gin.Context) {
 	}
 
 	summary := "Create deploy key:" + site.SiteName + " for server: " + server.ServerName
-	err, output := models.RunScriptable(c.GetDB(gctx), "site", site.ID, client, cmd, summary, false, sessUser.TeamId)
+	err, output := models.RunScriptable("site", site.ID, client, cmd, summary, false, sessUser.TeamId)
 
 	if utils.LogVerbose() {
 		fmt.Println(err, output)
@@ -367,10 +370,10 @@ func (c *Controller) DeployBranch(gctx *gin.Context) {
 	}
 
 	var site *models.Site
-	db := c.GetDB(gctx)
+	db := models.GetDB()
 
 	db.Where("id=? and team_id=?", siteId, sessUser.TeamId).First(&site)
-	server := models.GetServer(db, site.ServerID, sessUser.TeamId)
+	server := models.GetServer(site.ServerID, sessUser.TeamId)
 
 	scripts := utils.GetScriptables(site.DeployScriptables)
 	go console.RunSiteBuild(db, site, &server, scripts, false, nil)
@@ -390,7 +393,7 @@ func (c *Controller) ConfirmSiteDeploy(gctx *gin.Context) {
 		return
 	}
 
-	db := c.GetDB(gctx)
+	db := models.GetDB()
 
 	db.Exec("UPDATE sites SET status = ? WHERE id = ? and team_id=?", models.STATUS_QUEUED, siteId, sessUser.TeamId)
 	c.FlashSuccess(gctx, "Success! deploy will begin shortly...")
@@ -407,7 +410,7 @@ func (c *Controller) RetrySiteBuild(gctx *gin.Context) {
 		return
 	}
 
-	r := c.GetDB(gctx).Exec("Update sites set status=? WHERE id = ? and team_id=?",
+	r := models.GetDB().Exec("Update sites set status=? WHERE id = ? and team_id=?",
 		models.STATUS_QUEUED, siteId, sessUser.TeamId)
 	if r.RowsAffected > 0 {
 		c.FlashSuccess(gctx, "Successfully queued site for re-deploy. Please check the logs for more information.")
