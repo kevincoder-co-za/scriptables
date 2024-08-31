@@ -4,16 +4,15 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
 	"github.com/labstack/echo/v4"
 	"github.com/noirbizarre/gonja"
 	"plexcorp.tech/scriptable/models"
 	"plexcorp.tech/scriptable/utils"
 )
 
-func (c *Controller) ServerLogs(gctx *gin.Context) {
+func (c *Controller) ServerLogs(gctx echo.Context) error {
 	serverId, _ := strconv.ParseInt(gctx.Param("id"), 10, 64)
-	page, err := strconv.Atoi(gctx.Query("page"))
+	page, err := strconv.Atoi(gctx.QueryParam("page"))
 	sessUser := c.GetSessionUser(gctx)
 	db := models.GetDB()
 
@@ -21,18 +20,18 @@ func (c *Controller) ServerLogs(gctx *gin.Context) {
 		page = 1
 	}
 
-	perPage, err := strconv.Atoi(gctx.Query("perPage"))
+	perPage, err := strconv.Atoi(gctx.QueryParam("perPage"))
 	if err != nil {
 		perPage = 20
 	}
 
-	logLevel := gctx.Query("log_level")
+	logLevel := gctx.QueryParam("log_level")
 	logLevelQuery := ""
 	if logLevel != "" {
 		logLevelQuery = "&log_level=" + logLevel
 	}
 
-	logs := models.GetOperationLogs(db, page, perPage, "server", serverId, logLevel, sessUser.TeamId)
+	logs := models.GetOperationLogs(page, perPage, "server", serverId, logLevel, sessUser.TeamId)
 
 	var server models.Server
 	db.Where("id", serverId).Where("team_id=?", sessUser.TeamId).Find(&server)
@@ -47,7 +46,7 @@ func (c *Controller) ServerLogs(gctx *gin.Context) {
 		"highlight":     "servers",
 	}
 
-	c.Render("logs/list", vars, gctx)
+	return c.Render("logs/list", vars, gctx)
 
 }
 
@@ -70,19 +69,19 @@ func (c *Controller) ServerLogView(gctx echo.Context) error {
 func (c *Controller) SiteLogs(gctx echo.Context) error {
 	siteId, _ := strconv.ParseInt(gctx.Param("id"), 10, 64)
 	sessUser := c.GetSessionUser(gctx)
-	page, err := strconv.Atoi(gctx.Query("page"))
+	page, err := strconv.Atoi(gctx.QueryParam("page"))
 	if err != nil {
 		page = 1
 	}
 
-	perPage, err := strconv.Atoi(gctx.Query("perPage"))
+	perPage, err := strconv.Atoi(gctx.QueryParam("perPage"))
 	if err != nil {
 		perPage = 20
 	}
 
 	db := models.GetDB()
 
-	logLevel := gctx.Query("log_level")
+	logLevel := gctx.QueryParam("log_level")
 	logLevelQuery := ""
 	if logLevel != "" {
 		logLevelQuery = "&log_level=" + logLevel
@@ -117,16 +116,15 @@ func (c *Controller) SiteLogView(gctx echo.Context) error {
 	log.Log = utils.Decrypt(log.Log)
 
 	site := models.GetSiteById(log.EntityID, sessUser.TeamId)
-	c.RenderWithoutLayout("logs/view_log", gonja.Context{
+	return c.RenderWithoutLayout("logs/view_log", gonja.Context{
 		"log":       log.Log,
 		"highlight": "sites",
 		"site":      site}, gctx)
-
 }
 
-func (c *Controller) CronLogs(gctx *gin.Context) {
+func (c *Controller) CronLogs(gctx echo.Context) error {
 	cronId, _ := strconv.ParseInt(gctx.Param("id"), 10, 64)
-	page, err := strconv.Atoi(gctx.Query("page"))
+	page, err := strconv.Atoi(gctx.QueryParam("page"))
 	sessUser := c.GetSessionUser(gctx)
 	db := models.GetDB()
 
@@ -134,12 +132,12 @@ func (c *Controller) CronLogs(gctx *gin.Context) {
 		page = 1
 	}
 
-	perPage, err := strconv.Atoi(gctx.Query("perPage"))
+	perPage, err := strconv.Atoi(gctx.QueryParam("perPage"))
 	if err != nil {
 		perPage = 20
 	}
 
-	logLevel := gctx.Query("log_level")
+	logLevel := gctx.QueryParam("log_level")
 	logLevelQuery := ""
 	if logLevel != "" {
 		logLevelQuery = "&log_level=" + logLevel
@@ -160,10 +158,10 @@ func (c *Controller) CronLogs(gctx *gin.Context) {
 		"highlight":     "crons",
 	}
 
-	c.Render("logs/cron_list", vars, gctx)
+	return c.Render("logs/cron_list", vars, gctx)
 }
 
-func (c *Controller) CronLogView(gctx *gin.Context) {
+func (c *Controller) CronLogView(gctx echo.Context) error {
 	cronId, _ := strconv.ParseInt(gctx.Param("id"), 10, 64)
 	sessUser := c.GetSessionUser(gctx)
 	db := models.GetDB()
@@ -174,10 +172,10 @@ func (c *Controller) CronLogView(gctx *gin.Context) {
 
 	if log.ID == 0 {
 		c.FlashError(gctx, "Sorry, log not found.")
-		gctx.Redirect(http.StatusFound, "/crons")
+		return gctx.Redirect(http.StatusFound, "/crons")
 	}
 
-	c.RenderWithoutLayout("logs/view_log", gonja.Context{
+	return c.RenderWithoutLayout("logs/view_log", gonja.Context{
 		"log":       log.Log,
 		"highlight": "crons",
 	}, gctx)

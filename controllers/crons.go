@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/labstack/echo/v4"
 	"github.com/noirbizarre/gonja"
 	"plexcorp.tech/scriptable/models"
@@ -114,24 +113,24 @@ func (c *Controller) SaveCron(gctx echo.Context) error {
 		ctx["errors"] = errors
 	}
 
-	c.Render("crons/form", ctx, gctx)
+	return c.Render("crons/form", ctx, gctx)
 
 }
 
-func (c *Controller) Crons(gctx *gin.Context) {
-	page, err := strconv.Atoi(gctx.Query("page"))
+func (c *Controller) Crons(gctx echo.Context) error {
+	page, err := strconv.Atoi(gctx.QueryParam("page"))
 	sessUser := c.GetSessionUser(gctx)
 
 	if err != nil {
 		page = 1
 	}
 
-	perPage, err := strconv.Atoi(gctx.Query("perPage"))
+	perPage, err := strconv.Atoi(gctx.QueryParam("perPage"))
 	if err != nil {
 		perPage = 20
 	}
 
-	search := gctx.Query("search")
+	search := gctx.QueryParam("search")
 	crons := models.GetCrons(page, perPage, search, sessUser.TeamId)
 	searchQuery := ""
 
@@ -151,11 +150,11 @@ func (c *Controller) Crons(gctx *gin.Context) {
 		"addBtn":      "<a href=\"/crons/create\" class=\"btn-sm btn-success\" style=\"vertical-align:middle;\">ADD Cron</a>",
 	}
 
-	c.Render("crons/list", vars, gctx)
+	return c.Render("crons/list", vars, gctx)
 
 }
 
-func (c *Controller) EditCron(gctx *gin.Context) {
+func (c *Controller) EditCron(gctx echo.Context) error {
 	cronId, _ := strconv.ParseInt(gctx.Param("id"), 10, 64)
 	sessUser := c.GetSessionUser(gctx)
 	var cron models.Cron
@@ -167,14 +166,13 @@ func (c *Controller) EditCron(gctx *gin.Context) {
 
 	if cron.ID == 0 {
 		c.FlashError(gctx, "Cron with ID "+gctx.Param("id")+" does not exist.")
-		gctx.Redirect(http.StatusFound, "/crons")
-		return
+		return gctx.Redirect(http.StatusFound, "/crons")
 	}
 
 	servers := []models.Server{}
 	db.Where("team_id=?", sessUser.TeamId).Find(&servers)
 
-	c.Render("crons/form", gonja.Context{
+	return c.Render("crons/form", gonja.Context{
 		"title":           "Setup cron",
 		"cron_expression": cron.CronExpression,
 		"task":            cron.Task,
@@ -188,7 +186,7 @@ func (c *Controller) EditCron(gctx *gin.Context) {
 	}, gctx)
 }
 
-func (c *Controller) UpdateCron(gctx *gin.Context) {
+func (c *Controller) UpdateCron(gctx echo.Context) error {
 	user := gctx.FormValue("user")
 	task := gctx.FormValue("task")
 	cron_expression := gctx.FormValue("cron_expression")
@@ -209,8 +207,7 @@ func (c *Controller) UpdateCron(gctx *gin.Context) {
 
 	if cron.ID == 0 {
 		c.FlashError(gctx, "Cron with ID "+gctx.Param("id")+" does not exist.")
-		gctx.Redirect(http.StatusFound, "/crons")
-		return
+		return gctx.Redirect(http.StatusFound, "/crons")
 	}
 
 	ctx := gonja.Context{
@@ -258,33 +255,31 @@ func (c *Controller) UpdateCron(gctx *gin.Context) {
 		}
 
 		c.FlashSuccess(gctx, "Successfully updated cron.")
-		gctx.Redirect(http.StatusFound, "/crons")
-		return
+		return gctx.Redirect(http.StatusFound, "/crons")
 	} else {
 		ctx["errors"] = errors
 	}
 
-	c.Render("crons/form", ctx, gctx)
+	return c.Render("crons/form", ctx, gctx)
 }
 
-func (c *Controller) DisableCron(gctx *gin.Context) {
+func (c *Controller) DisableCron(gctx echo.Context) error {
 	cronId, _ := strconv.ParseInt(gctx.FormValue("id"), 10, 64)
 	sessUser := c.GetSessionUser(gctx)
 	db := models.GetDB()
 
 	if cronId == 0 {
 		c.FlashError(gctx, "Invalid Cron ID - please try again.")
-		gctx.Redirect(http.StatusFound, "/crons")
-		return
+		return gctx.Redirect(http.StatusFound, "/crons")
 	}
 
 	db.Exec("UPDATE crons SET deleted_at = NOW(), status = ? WHERE id = ? and team_id = ?",
 		models.STATUS_QUEUED, cronId, sessUser.TeamId)
 	c.FlashSuccess(gctx, "Successfully queued cron for deletion.")
-	gctx.Redirect(http.StatusFound, "/crons")
+	return gctx.Redirect(http.StatusFound, "/crons")
 }
 
-func (c *Controller) RetryCronBuild(gctx *gin.Context) {
+func (c *Controller) RetryCronBuild(gctx echo.Context) error {
 	retryBuild := gctx.FormValue("retryBuildId")
 	sessUser := c.GetSessionUser(gctx)
 	updated := false
@@ -304,5 +299,5 @@ func (c *Controller) RetryCronBuild(gctx *gin.Context) {
 		c.FlashSuccess(gctx, "Successfully queued cron for deployment.")
 	}
 
-	gctx.Redirect(http.StatusFound, "/crons")
+	return gctx.Redirect(http.StatusFound, "/crons")
 }

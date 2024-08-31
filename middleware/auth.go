@@ -6,37 +6,45 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gin-contrib/sessions"
 	"github.com/labstack/echo/v4"
+	"plexcorp.tech/scriptable/controllers"
+	"plexcorp.tech/scriptable/models"
 )
 
-func AuthMiddleware() echo.MiddlewareFunc {
-	return func(c echo.Context) {
+func AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
 		if strings.Contains(c.Path(), "/users/") ||
 			strings.Contains(c.Path(), "/webhooks/") ||
 			strings.Contains(c.Path(), "trial-expired") {
-			c.Next()
-			return
+			return next(c)
 		}
 
 		allowRegistration, _ := strconv.ParseBool(os.Getenv("ALLOW_REGISTER"))
 		if allowRegistration {
-			GetDB().Raw("SELECT count(id) FROM users").Scan(&numUsers)
+			var numUsers int
+			models.GetDB().Raw("SELECT count(id) FROM users").Scan(&numUsers)
 			if numUsers == 0 {
-				c.Redirect(http.StatusFound, "/users/register")
-				c.Abort()
-				return
+				return c.Redirect(http.StatusFound, "/users/register")
 			}
 		}
 
-		sess, _ := sessions.Get("session", c)
-		userID, exists := session["userID"]
-		if !exists {
-			c.Redirect(http.StatusFound, "/users/login")
-			c.Abort()
-			return
+		controller := controllers.Controller{}
+		user_id_interface, err := controller.GetSessionValue("user_id", c)
+		isValid := false
+		if err == nil && user_id_interface != nil {
+			switch user_id_interface.(type) {
+			case int64:
+				isValid = true
+				break
+			default:
+				isValid = false
+			}
 		}
 
-		c.Next()
+		if !isValid {
+			return c.Redirect(http.StatusFound, "/users/login")
+		}
+
+		return next(c)
 	}
 }

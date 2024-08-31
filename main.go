@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
-	"net/http"
 	"os"
 	"time"
 
 	"github.com/gorilla/sessions"
-	"github.com/labstack/echo"
 	"github.com/labstack/echo-contrib/session"
+	"github.com/labstack/echo/v4"
+
+	"github.com/labstack/echo/v4/middleware"
 	"plexcorp.tech/scriptable/console"
 	"plexcorp.tech/scriptable/controllers"
 	"plexcorp.tech/scriptable/models"
@@ -59,8 +60,11 @@ func main() {
 
 	os.Setenv("MYSQL_DSN", mysqlDSN)
 	router := echo.New()
+	router.Use(middleware.CSRF())
+
 	router.Use(session.Middleware(sessions.NewCookieStore([]byte(os.Getenv("SESSION_KEY")))))
-	router.Static("/static", http.Dir("./static"))
+
+	router.Static("/static", "./static")
 
 	controller := controllers.Controller{}
 	router.GET("/trial-expired", controller.TrialExpired)

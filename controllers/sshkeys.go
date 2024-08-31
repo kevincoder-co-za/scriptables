@@ -5,15 +5,15 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v4"
 	"github.com/noirbizarre/gonja"
 	"plexcorp.tech/scriptable/models"
 	"plexcorp.tech/scriptable/utils"
 )
 
-func (c *Controller) CreateSShKey(gctx *gin.Context) {
+func (c *Controller) CreateSShKey(gctx echo.Context) error {
 
-	c.Render("sshkeys/form", gonja.Context{
+	return c.Render("sshkeys/form", gonja.Context{
 		"title":     "Setup an SSH key",
 		"sshkey_id": 0,
 		"highlight": "sshkeys",
@@ -21,15 +21,14 @@ func (c *Controller) CreateSShKey(gctx *gin.Context) {
 
 }
 
-func (c *Controller) EditSShKey(gctx *gin.Context) {
+func (c *Controller) EditSShKey(gctx echo.Context) error {
 
 	sshkeyId, err := strconv.ParseInt(gctx.Param("id"), 10, 64)
 	sessUser := c.GetSessionUser(gctx)
 
 	if err != nil {
 		c.FlashError(gctx, "Sorry, invalid SSH key ID.")
-		gctx.Redirect(http.StatusFound, "/sshkeys")
-		return
+		return gctx.Redirect(http.StatusFound, "/sshkeys")
 	}
 
 	var sshkey models.SshKey
@@ -37,8 +36,7 @@ func (c *Controller) EditSShKey(gctx *gin.Context) {
 
 	if sshkey.ID == 0 {
 		c.FlashError(gctx, "Sorry, invalid SSH key ID.")
-		gctx.Redirect(http.StatusFound, "/sshkeys")
-		return
+		return gctx.Redirect(http.StatusFound, "/sshkeys")
 	}
 
 	pass := sshkey.Passphrase
@@ -46,7 +44,7 @@ func (c *Controller) EditSShKey(gctx *gin.Context) {
 		pass = utils.Decrypt(sshkey.Passphrase)
 	}
 
-	c.Render("sshkeys/form", gonja.Context{
+	return c.Render("sshkeys/form", gonja.Context{
 		"title":       "Update SSH key: " + sshkey.Name,
 		"name":        sshkey.Name,
 		"sshkey_id":   sshkeyId,
@@ -58,7 +56,7 @@ func (c *Controller) EditSShKey(gctx *gin.Context) {
 
 }
 
-func (c *Controller) SaveSShKey(gctx *gin.Context) {
+func (c *Controller) SaveSShKey(gctx echo.Context) error {
 	privateKey := gctx.FormValue("private_key")
 	publicKey := gctx.FormValue("public_key")
 	passphrase := gctx.FormValue("passphrase")
@@ -109,26 +107,25 @@ func (c *Controller) SaveSShKey(gctx *gin.Context) {
 		}
 
 		c.FlashSuccess(gctx, "Successfully saved ssh key.")
-		gctx.Redirect(http.StatusFound, "/sshkeys")
-		return
+		return gctx.Redirect(http.StatusFound, "/sshkeys")
 	}
 
-	c.Render("sshkeys/create", ctx, gctx)
+	return c.Render("sshkeys/create", ctx, gctx)
 
 }
 
-func (c *Controller) SshKeys(gctx *gin.Context) {
-	page, err := strconv.Atoi(gctx.Query("page"))
+func (c *Controller) SshKeys(gctx echo.Context) error {
+	page, err := strconv.Atoi(gctx.QueryParam("page"))
 	if err != nil {
 		page = 1
 	}
 
-	perPage, err := strconv.Atoi(gctx.Query("perPage"))
+	perPage, err := strconv.Atoi(gctx.QueryParam("perPage"))
 	if err != nil {
 		perPage = 20
 	}
 
-	search := gctx.Query("search")
+	search := gctx.QueryParam("search")
 	sessUser := c.GetSessionUser(gctx)
 	keys := models.GetSshKeysList(page, perPage, search, sessUser.TeamId)
 	searchQuery := ""
@@ -148,6 +145,6 @@ func (c *Controller) SshKeys(gctx *gin.Context) {
 		"highlight":   "sshkeys",
 	}
 
-	c.Render("sshkeys/list", vars, gctx)
+	return c.Render("sshkeys/list", vars, gctx)
 
 }

@@ -7,54 +7,43 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v4"
 	"github.com/noirbizarre/gonja"
 	"github.com/pquerna/otp/totp"
 	"plexcorp.tech/scriptable/models"
 	"plexcorp.tech/scriptable/utils"
 )
 
-func (c *Controller) MyProfile(gctx *gin.Context) {
+func (c *Controller) MyProfile(gctx echo.Context) error {
 
-	session := sessions.Default(gctx)
-	userID := session.Get("user_id")
-
-	var user models.User
-	models.GetDB().Table("users").Where("id=?", userID).First(&user)
-
+	user := c.GetSessionUser(gctx)
 	vars := gonja.Context{
 		"title":     "My Profile",
 		"user":      user,
 		"highlight": "users",
 	}
 
-	c.Render("users/profile", vars, gctx)
+	return c.Render("users/profile", vars, gctx)
 
 }
 
-func (c *Controller) UpdateProfile(gctx *gin.Context) {
+func (c *Controller) UpdateProfile(gctx echo.Context) error {
 	email := strings.Trim(gctx.FormValue("email"), " ")
 	name := strings.Trim(gctx.FormValue("name"), " ")
 	twoFactor := strings.Trim(gctx.FormValue("two_factor"), " ")
-
-	session := sessions.Default(gctx)
-	userID := session.Get("user_id")
+	user := c.GetSessionUser(gctx)
 	db := models.GetDB()
-
-	var user models.User
-	db.Table("users").Where("id", userID).First(&user)
+	db.Table("users").Where("id", user.ID).First(&user)
 
 	if user.ID == 0 {
 		c.FlashError(gctx, "Sorry, failed to fetch your profile. Please try again, if the problem persists. Log out and back in again.")
-		gctx.Redirect(http.StatusFound, "/user/profile")
-		return
+		return gctx.Redirect(http.StatusFound, "/user/profile")
+
 	}
 
 	if email == "" || name == "" || len(email) < 3 || !strings.Contains(email, "@") || len(name) < 3 {
 		c.FlashError(gctx, "Sorry, invalid name or email. Both should be 3 characters or more and email should be a valid email address.")
-		gctx.Redirect(http.StatusFound, "/user/profile")
-		return
+		return gctx.Redirect(http.StatusFound, "/user/profile")
 	}
 
 	if email != user.Email {
@@ -62,8 +51,7 @@ func (c *Controller) UpdateProfile(gctx *gin.Context) {
 		db.Raw("select count(id) as total from users where email=?", email).Scan(&found)
 		if found > 0 {
 			c.FlashError(gctx, "Sorry, email is already assigned to another user.")
-			gctx.Redirect(http.StatusFound, "/user/profile")
-			return
+			return gctx.Redirect(http.StatusFound, "/user/profile")
 		}
 	}
 
@@ -74,31 +62,25 @@ func (c *Controller) UpdateProfile(gctx *gin.Context) {
 
 	db.Exec("UPDATE users SET email=?, name=?,two_factor=? WHERE id=?", email, name, tf, user.ID)
 	c.FlashSuccess(gctx, "Successfully updated your profile.")
-	gctx.Redirect(http.StatusFound, "/user/profile")
+	return gctx.Redirect(http.StatusFound, "/user/profile")
 }
 
-func (c *Controller) ShowQrCodePng(gctx *gin.Context) {
+func (c *Controller) ShowQrCodePng(gctx echo.Context) error {
 
-	session := sessions.Default(gctx)
-	userID := session.Get("user_id")
-
-	var user models.User
-	db := models.GetDB()
-	db.Where("id=?", userID).Find(&user)
-	qrcodeBytes, err := utils.ShowQrCode(user.Email, db)
+	user := c.GetSessionUser(gctx)
+	qrcodeBytes, err := utils.ShowQrCode(user.Email, models.GetDB())
 
 	if err != nil {
 		c.FlashError(gctx, "Sorry, failed to generate 2Factor QR code. Please try again.")
-		gctx.Redirect(http.StatusFound, "/user/profile")
-		return
+		return gctx.Redirect(http.StatusFound, "/user/profile")
 	}
 
-	gctx.Header("Content-Type", "image/png")
-	gctx.Writer.Write(qrcodeBytes)
-
+	gctx.Request().Header.Add("Content-Type", "image/png")
+	_, err = gctx.Response().Write(qrcodeBytes)
+	return err
 }
 
-func (c *Controller) CheckLogin(gctx *gin.Context) {
+func (c *Controller) CheckLogin(gctx echo.Context) error {
 	vars := gonja.Context{
 		"title": "Login",
 	}
@@ -121,31 +103,28 @@ func (c *Controller) CheckLogin(gctx *gin.Context) {
 			"email":    email,
 			"password": password,
 		}
-		c.RenderAuth("users/two_factor_confirm", vars, gctx)
-		return
+		return c.RenderAuth("users/two_factor_confirm", vars, gctx)
 	}
 
 	if len(vars["errors"].([]string)) == 0 {
-		user, err := models.Authenticate(email, password, gctx.Request.RemoteAddr)
+		user, err := models.Authenticate(email, password, gctx.Request().RemoteAddr)
 		if err != nil {
 			vars["errors"] = []string{err.Error()}
 		}
 
 		if user.ID != 0 && user.Email != "" {
-			session := sessions.Default(gctx)
-			session.Set("user_id", user.ID)
-			session.Save()
-			gctx.Redirect(http.StatusFound, "/")
-			return
+			values := make(map[string]interface{})
+			values["user_id"] = user.ID
+			c.SetSessionValues(values, gctx)
+			return gctx.Redirect(http.StatusFound, "/")
 		}
 	}
 
 	vars["errors"] = []string{"Invalid username or password."}
-	c.RenderAuth("users/login", vars, gctx)
-
+	return c.RenderAuth("users/login", vars, gctx)
 }
 
-func (c *Controller) TwoFactorAuthenticate(gctx *gin.Context) {
+func (c *Controller) TwoFactorAuthenticate(gctx echo.Context) error {
 
 	vars := gonja.Context{
 		"title": "Two Factor Login",
@@ -177,22 +156,21 @@ func (c *Controller) TwoFactorAuthenticate(gctx *gin.Context) {
 			"password": password,
 			"errors":   []string{"Invalid two factor auth code entered. Please try again."},
 		}
+
 		c.RenderAuth("users/two_factor_confirm", vars, gctx)
-		return
 	}
 
 	if len(vars["errors"].([]string)) == 0 {
-		user, err := models.Authenticate(email, password, gctx.Request.RemoteAddr)
+		user, err := models.Authenticate(email, password, gctx.Request().RemoteAddr)
 		if err != nil {
 			vars["errors"] = []string{err.Error()}
 		}
 
 		if user.ID != 0 && user.Email != "" {
-			session := sessions.Default(gctx)
-			session.Set("user_id", user.ID)
-			session.Save()
-			gctx.Redirect(http.StatusFound, "/")
-			return
+			values := make(map[string]interface{})
+			values["user_id"] = user.ID
+			c.SetSessionValues(values, gctx)
+			return gctx.Redirect(http.StatusFound, "/")
 		}
 	}
 
@@ -200,42 +178,40 @@ func (c *Controller) TwoFactorAuthenticate(gctx *gin.Context) {
 		vars["errors"] = []string{"Invalid 2factor auth code. Please try again."}
 	}
 
-	c.RenderAuth("users/login", vars, gctx)
+	return c.RenderAuth("users/login", vars, gctx)
 
 }
 
-func (c *Controller) LoginView(gctx *gin.Context) {
+func (c *Controller) LoginView(gctx echo.Context) error {
 
 	vars := gonja.Context{
 		"title": "Login",
 	}
 
-	c.RenderAuth("users/login", vars, gctx)
+	return c.RenderAuth("users/login", vars, gctx)
 
 }
 
-func (c *Controller) Logout(gctx *gin.Context) {
+func (c *Controller) Logout(gctx echo.Context) error {
 
 	vars := gonja.Context{
 		"title": "Login",
 	}
 
-	session := sessions.Default(gctx)
-	session.Clear()
-	session.Save()
+	c.DestroySession(gctx)
 
-	c.RenderAuth("users/login", vars, gctx)
+	return c.RenderAuth("users/login", vars, gctx)
 }
 
-func (c *Controller) ForgotPassword(gctx *gin.Context) {
+func (c *Controller) ForgotPassword(gctx echo.Context) error {
 
 	vars := gonja.Context{
 		"title": "Forgot Password",
 	}
 
-	if gctx.Request.Method == http.MethodPost {
+	if gctx.Request().Method == http.MethodPost {
 		email := gctx.FormValue("email")
-		isValidEmail := models.IsValidEmail(email, gctx.Request.RemoteAddr)
+		isValidEmail := models.IsValidEmail(email, gctx.Request().RemoteAddr)
 
 		if isValidEmail {
 			models.SendPasswordResetToken(email, "Password reset request", "forgotpassword")
@@ -244,11 +220,10 @@ func (c *Controller) ForgotPassword(gctx *gin.Context) {
 		vars["successMsg"] = "Please check your email for further instructions."
 	}
 
-	c.RenderAuth("users/forgot", vars, gctx)
-
+	return c.RenderAuth("users/forgot", vars, gctx)
 }
 
-func (c *Controller) ChangePassword(gctx *gin.Context) {
+func (c *Controller) ChangePassword(gctx echo.Context) error {
 
 	token := gctx.Param("token")
 
@@ -258,7 +233,7 @@ func (c *Controller) ChangePassword(gctx *gin.Context) {
 	}
 
 	hasErrors := false
-	if gctx.Request.Method == http.MethodPost {
+	if gctx.Request().Method == http.MethodPost {
 		email := gctx.FormValue("email")
 		password := gctx.FormValue("password")
 		passwordAgain := gctx.FormValue("passwordAgain")
@@ -282,32 +257,29 @@ func (c *Controller) ChangePassword(gctx *gin.Context) {
 		}
 	}
 
-	if gctx.Request.Method == http.MethodPost && !hasErrors {
+	if gctx.Request().Method == http.MethodPost && !hasErrors {
 		vars["title"] = "Login"
-		c.RenderAuth("users/login", vars, gctx)
-		return
-
-	} else {
-		c.RenderAuth("users/reset", vars, gctx)
-		return
+		return c.RenderAuth("users/login", vars, gctx)
 
 	}
 
+	return c.RenderAuth("users/reset", vars, gctx)
+
 }
 
-func (c *Controller) ListUsers(gctx *gin.Context) {
-	page, err := strconv.Atoi(gctx.Query("page"))
+func (c *Controller) ListUsers(gctx echo.Context) error {
+	page, err := strconv.Atoi(gctx.QueryParam("page"))
 	sessUser := c.GetSessionUser(gctx)
 	if err != nil {
 		page = 1
 	}
 
-	perPage, err := strconv.Atoi(gctx.Query("perPage"))
+	perPage, err := strconv.Atoi(gctx.QueryParam("perPage"))
 	if err != nil {
 		perPage = 20
 	}
 
-	search := gctx.Query("search")
+	search := gctx.QueryParam("search")
 
 	searchQuery := ""
 
@@ -327,11 +299,11 @@ func (c *Controller) ListUsers(gctx *gin.Context) {
 
 	vars["users"] = models.GetUsersList(page, perPage, search, sessUser.TeamId)
 
-	c.Render("users/list", vars, gctx)
+	return c.Render("users/list", vars, gctx)
 
 }
 
-func (c *Controller) HandleUserActionsFormPost(gctx *gin.Context) {
+func (c *Controller) HandleUserActionsFormPost(gctx echo.Context) error {
 	action := gctx.FormValue("action")
 	id, err := strconv.ParseInt(gctx.FormValue("user_id"), 10, 64)
 	sessUser := c.GetSessionUser(gctx)
@@ -370,17 +342,17 @@ func (c *Controller) HandleUserActionsFormPost(gctx *gin.Context) {
 		}
 	}
 
-	gctx.Redirect(http.StatusFound, "/user/list")
+	return gctx.Redirect(http.StatusFound, "/user/list")
 }
 
-func (c *Controller) NewUser(gctx *gin.Context) {
-	c.Render("users/new_user", gonja.Context{
+func (c *Controller) NewUser(gctx echo.Context) error {
+	return c.Render("users/new_user", gonja.Context{
 		"serverTypes": models.GetServerTypes(),
 		"title":       "Choose server template",
 	}, gctx)
 }
 
-func (c *Controller) RegisterForm(gctx *gin.Context) {
+func (c *Controller) RegisterForm(gctx echo.Context) error {
 	vars := gonja.Context{
 		"title": "Register for an account",
 		"email": "",
@@ -390,8 +362,7 @@ func (c *Controller) RegisterForm(gctx *gin.Context) {
 	allowRegistration, _ := strconv.ParseBool(os.Getenv("ALLOW_REGISTER"))
 	if !allowRegistration {
 		c.FlashError(gctx, "Registration is currently not allowed. Please enable the ENV flag first.")
-		gctx.Redirect(http.StatusFound, "/denied")
-		return
+		return gctx.Redirect(http.StatusFound, "/denied")
 	}
 
 	testEncryption := "testing 12345"
@@ -402,10 +373,10 @@ func (c *Controller) RegisterForm(gctx *gin.Context) {
 		vars["errors"] = []string{"Warning: there is a problem with your encryption key. Ensure that it is between 16, 24, 32 characters long. Please update this and restart the docker container."}
 	}
 
-	c.RenderAuth("users/register", vars, gctx)
+	return c.RenderAuth("users/register", vars, gctx)
 }
 
-func (c *Controller) RegistrationComplete(gctx *gin.Context) {
+func (c *Controller) RegistrationComplete(gctx echo.Context) error {
 	email := gctx.FormValue("email")
 	password := gctx.FormValue("password")
 	name := gctx.FormValue("name")
@@ -415,8 +386,7 @@ func (c *Controller) RegistrationComplete(gctx *gin.Context) {
 	allowRegistration, _ := strconv.ParseBool(os.Getenv("ALLOW_REGISTER"))
 	if !allowRegistration {
 		c.FlashError(gctx, "Registration is currently not allowed. Please enable the ENV flag first.")
-		gctx.Redirect(http.StatusFound, "/denied")
-		return
+		return gctx.Redirect(http.StatusFound, "/denied")
 	}
 
 	var errors []string
@@ -477,13 +447,12 @@ func (c *Controller) RegistrationComplete(gctx *gin.Context) {
 			}
 
 			utils.SendEmail("Welcome to Scriptables!", "", []string{user.Email}, vars, "welcome")
-			c.FlashSuccess(gctx, "Successfully setup your account. You now can login.")
-			gctx.Redirect(http.StatusFound, "/users/login")
-			return
+			c.SetFlashMessages([]string{"Successfully setup your account. You now can login."}, "succes", gctx)
+			return gctx.Redirect(http.StatusFound, "/users/login")
 		}
 	} else {
 		vars["errors"] = errors
 	}
 
-	c.RenderAuth("users/register", vars, gctx)
+	return c.RenderAuth("users/register", vars, gctx)
 }

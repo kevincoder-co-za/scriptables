@@ -31,25 +31,14 @@ type Controller struct {
 
 func (c *Controller) RenderHtml(tpl_name string, ctx gonja.Context, gctx echo.Context, layoutTpl string) error {
 
-	sess, err := session.Get("session", gctx)
-	flash, exists := sess.Values["success"]
-	sessionChanged := false
-	if exists {
-		ctx["successMsg"] = flash.(string)
-		sess.Values["success"] = ""
-		sessionChanged = true
+	flashes, err := c.GetFlashMessages(models.FLASH_SUCCESS, gctx)
+	if err == nil && len(flashes) > 0 {
+		ctx["success"] = flashes
 	}
 
-	flash, exists = sess.Values["errors"]
-	if exists {
-		errors, _ := flash.(string)
-		ctx["errors"] = []string{errors}
-		sess.Values["errors"] = ""
-		sessionChanged = true
-	}
-
-	if sessionChanged {
-		sess.Save(gctx.Request(), gctx.Response())
+	flashes, err = c.GetFlashMessages(models.FLASH_SUCCESS, gctx)
+	if err == nil && len(flashes) > 0 {
+		ctx["errors"] = flashes
 	}
 
 	_, ok := ctx["highlight"]
@@ -86,8 +75,8 @@ func (c *Controller) Render(tpl_name string, ctx gonja.Context, gctx echo.Contex
 }
 
 // This Render method renders public templates where authentication is not required.
-func (c *Controller) RenderAuth(tpl_name string, ctx gonja.Context, gctx echo.Context) {
-	c.RenderHtml(tpl_name, ctx, gctx, "templates/auth")
+func (c *Controller) RenderAuth(tpl_name string, ctx gonja.Context, gctx echo.Context) error {
+	return c.RenderHtml(tpl_name, ctx, gctx, "templates/auth")
 }
 
 // Render plain text, mostly used for viewing logs.
@@ -100,28 +89,25 @@ func (c *Controller) RenderWithoutLayout(tpl_name string, ctx gonja.Context, gct
 	return gctx.HTML(http.StatusOK, view)
 }
 
-func (c *Controller) FlashMessage(gctx echo.Context, msg string, msgType string) {
-	sess, _ := session.Get("session", gctx)
-	sess.Values[msgType] = msg
-	sess.Save(gctx.Request(), gctx.Response())
-}
-
-func (c *Controller) FlashSuccess(gctx echo.Context, msg string) {
-	c.FlashMessage(gctx, msg, "error")
-}
-
-func (c *Controller) FlashError(gctx echo.Context, msg string) {
-	c.FlashMessage(gctx, msg, "error")
-}
-
 func (c *Controller) GetSessionUser(gctx echo.Context) models.User {
-	sess, _ := session.Get("session", gctx)
-	userId, ok := sess.Values["user_id"]
+	user_id_interface, err := c.GetSessionValue("user_id", gctx)
 	var user models.User
-	if !ok {
+
+	isValid := false
+	if err == nil && user_id_interface != nil {
+		switch user_id_interface.(type) {
+		case int64:
+			isValid = true
+			break
+		default:
+			isValid = false
+		}
+	}
+
+	if !isValid {
 		return user
 	}
-	models.GetDB().Raw("SELECT id, name, email, verified, team_id FROM users where id = ?", userId.(int64)).Scan(&user)
+	models.GetDB().Raw("SELECT id, name, email, verified, team_id FROM users where id = ?", user_id_interface.(int64)).Scan(&user)
 	return user
 }
 
@@ -142,4 +128,93 @@ func (c *Controller) TrialExpired(gctx echo.Context) error {
 	return c.Render("general/trial_expired", gonja.Context{
 		"highlight": "",
 	}, gctx)
+}
+
+func (c *Controller) GetSessionValue(key string, e echo.Context) (interface{}, error) {
+	sess, err := session.Get("scriptables_session", e)
+	if err != nil {
+		return nil, err
+	}
+
+	value, ok := sess.Values[key]
+	if ok {
+		return value, nil
+	}
+
+	return nil, fmt.Errorf("session key not found")
+}
+
+func (c *Controller) SetSessionValues(values map[string]interface{}, e echo.Context) (bool, error) {
+	sess, err := session.Get("scriptables_session", e)
+	if err != nil {
+		return false, err
+	}
+
+	for k, v := range values {
+		sess.Values[k] = v
+	}
+
+	sess.Save(e.Request(), e.Response())
+	if err := sess.Save(e.Request(), e.Response()); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (c *Controller) DestroySession(e echo.Context) (bool, error) {
+	sess, err := session.Get("scriptables_session", e)
+	if err != nil {
+		return false, err
+	}
+
+	sess.Values = nil
+
+	sess.Save(e.Request(), e.Response())
+	if err := sess.Save(e.Request(), e.Response()); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (c *Controller) GetFlashMessages(flash_type string, e echo.Context) ([]string, error) {
+	sess, err := session.Get("scriptables_session", e)
+	if err != nil {
+		return nil, err
+	}
+
+	flashes := sess.Flashes(flash_type)
+	var formatted_messages []string
+
+	for _, v := range flashes {
+		formatted_messages = append(formatted_messages, v.(string))
+	}
+
+	return formatted_messages, nil
+}
+
+func (c *Controller) SetFlashMessages(flashes []string, flash_type string, e echo.Context) (bool, error) {
+	sess, err := session.Get("scriptables_session", e)
+	if err != nil {
+		return false, err
+	}
+
+	for _, v := range flashes {
+		sess.AddFlash(flash_type, v)
+	}
+
+	if err := sess.Save(e.Request(), e.Response()); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (c *Controller) FlashSuccess(e echo.Context, msg string) (bool, error) {
+	return c.SetFlashMessages([]string{msg}, models.FLASH_SUCCESS, e)
+}
+
+func (c *Controller) FlashError(e echo.Context, msg string) (bool, error) {
+	return c.SetFlashMessages([]string{msg}, models.FLASH_ERROR, e)
 }
