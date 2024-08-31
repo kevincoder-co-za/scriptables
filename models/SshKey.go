@@ -35,3 +35,11 @@ func GetSshKeysList(page int, perPage int, search string, teamId int64) []SshKey
 
 	return keys
 }
+
+func DoesTeamHaveAnSSHKey(teamID int64) bool {
+	db := GetDB()
+	total := int64(0)
+	db.Table("ssh_keys").Where("team_id=?", teamID).Count(&total)
+
+	return total > 0
+}

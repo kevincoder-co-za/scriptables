@@ -130,8 +130,8 @@ func main() {
 	router.POST("/site/save", controllers.AuthMiddleware(controller.SaveSite))
 
 	router.GET("/crons", controllers.AuthMiddleware(controller.Crons))
-	router.GET("/cron/create", controllers.AuthMiddleware(controller.CreateCron))
 	router.POST("/cron/save", controllers.AuthMiddleware(controller.SaveCron))
+	router.GET("/cron/create", controllers.AuthMiddleware(controller.CreateCron))
 	router.GET("/cron/edit/:id", controllers.AuthMiddleware(controller.EditCron))
 	router.POST("/cron/update/:id", controllers.AuthMiddleware(controller.UpdateCron))
 	router.POST("/cron/disable/", controllers.AuthMiddleware(controller.DisableCron))

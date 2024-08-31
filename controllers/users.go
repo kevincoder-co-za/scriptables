@@ -436,7 +436,26 @@ func (c *Controller) RegistrationComplete(gctx echo.Context) error {
 		if userTeam.ID != 0 {
 			user.TeamId = userTeam.ID
 			db.Create(&user)
+
+			// make SSH key
+			if !models.DoesTeamHaveAnSSHKey(user.TeamId) {
+				privateKey, publicKey := utils.MakeSSHKey()
+				if privateKey != "" && publicKey != "" {
+					key := models.SshKey{
+						Name:       "Default Scriptables Generated",
+						PrivateKey: utils.Encrypt(privateKey),
+						PublicKey:  utils.Encrypt(publicKey),
+						Passphrase: "",
+						CreatedAt:  time.Now(),
+						UpdatedAt:  time.Now(),
+						TeamId:     user.TeamId,
+					}
+
+					db.Create(&key)
+				}
+			}
 		}
+
 		if user.ID == 0 {
 			vars["errors"] = []string{"Sorry, something went wrong. Please try again."}
 		} else {
