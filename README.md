@@ -21,7 +21,7 @@ Detailed documentation and instructions on how to install can be found: https://
 
 ## Quick start
 
- - Run: curl -fsSL https://raw.githubusercontent.com/plexcorp-pty-ltd/scriptables/main/autoprovision.sh | bash
+ - Run: ```curl -fsSL https://raw.githubusercontent.com/kevincoder-co-za/scriptables/refs/heads/main/autoprovision.sh | bash ```
  - Navigate to: http://127.0.0.1:3012/users/register
 
 ## Known issues
