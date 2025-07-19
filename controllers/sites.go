@@ -11,10 +11,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/noirbizarre/gonja"
-	"plexcorp.tech/scriptable/console"
-	"plexcorp.tech/scriptable/models"
-	"plexcorp.tech/scriptable/sshclient"
-	"plexcorp.tech/scriptable/utils"
+	"kevincodercoza/scriptable/console"
+	"kevincodercoza/scriptable/models"
+	"kevincodercoza/scriptable/sshclient"
+	"kevincodercoza/scriptable/utils"
 )
 
 func (c *Controller) CreateSite(gctx echo.Context) error {

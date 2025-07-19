@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"gorm.io/gorm"
-	"plexcorp.tech/scriptable/models"
-	"plexcorp.tech/scriptable/parsers"
-	"plexcorp.tech/scriptable/utils"
+	"kevincodercoza/scriptable/models"
+	"kevincodercoza/scriptable/parsers"
+	"kevincodercoza/scriptable/utils"
 )
 
 func getScriptables(site *models.Site) []string {

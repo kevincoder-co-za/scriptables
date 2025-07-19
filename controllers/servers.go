@@ -9,8 +9,8 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/noirbizarre/gonja"
-	"plexcorp.tech/scriptable/models"
-	"plexcorp.tech/scriptable/utils"
+	"kevincodercoza/scriptable/models"
+	"kevincodercoza/scriptable/utils"
 )
 
 func (c *Controller) ChooseServerType(gctx echo.Context) error {

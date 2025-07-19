@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"plexcorp.tech/scriptable/models"
+	"kevincodercoza/scriptable/models"
 )
 
 func parseServerImport(lineNumber int, script string, server *models.ServerWithSShKey, line string) (string, bool) {

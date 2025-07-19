@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
-	"plexcorp.tech/scriptable/models"
+	"kevincodercoza/scriptable/models"
 )
 
 func AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {

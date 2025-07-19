@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"plexcorp.tech/scriptable/models"
+	"kevincodercoza/scriptable/models"
 )
 
 // Will trigger a deploy - useful to use with your version control system, to build

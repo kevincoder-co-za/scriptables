@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"gorm.io/gorm"
-	"plexcorp.tech/scriptable/models"
-	"plexcorp.tech/scriptable/utils"
+	"kevincodercoza/scriptable/models"
+	"kevincodercoza/scriptable/utils"
 )
 
 func DeployBranch(db *gorm.DB) {

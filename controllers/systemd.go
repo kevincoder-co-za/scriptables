@@ -5,7 +5,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/noirbizarre/gonja"
-	"plexcorp.tech/scriptable/models"
+	"kevincodercoza/scriptable/models"
 )
 
 func (c *Controller) ListServices(gctx echo.Context) error {

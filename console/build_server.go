@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"gorm.io/gorm"
-	"plexcorp.tech/scriptable/models"
-	"plexcorp.tech/scriptable/parsers"
-	"plexcorp.tech/scriptable/sshclient"
-	"plexcorp.tech/scriptable/utils"
+	"kevincodercoza/scriptable/models"
+	"kevincodercoza/scriptable/parsers"
+	"kevincodercoza/scriptable/sshclient"
+	"kevincodercoza/scriptable/utils"
 )
 
 func runServerBuild(db *gorm.DB, server *models.ServerWithSShKey, scriptables []string, wg *sync.WaitGroup) error {

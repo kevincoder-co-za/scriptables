@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"gorm.io/gorm"
-	"plexcorp.tech/scriptable/models"
+	"kevincodercoza/scriptable/models"
 )
 
 func setCronStatus(db *gorm.DB, id int64, status string) {

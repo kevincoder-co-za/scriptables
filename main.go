@@ -11,9 +11,9 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	"plexcorp.tech/scriptable/console"
-	"plexcorp.tech/scriptable/controllers"
-	"plexcorp.tech/scriptable/models"
+	"kevincodercoza/scriptable/console"
+	"kevincodercoza/scriptable/controllers"
+	"kevincodercoza/scriptable/models"
 )
 
 // This method fires cron jobs found in the console/ directory.

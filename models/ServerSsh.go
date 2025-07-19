@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"time"
 
-	"plexcorp.tech/scriptable/sshclient"
-	"plexcorp.tech/scriptable/utils"
+	"kevincodercoza/scriptable/sshclient"
+	"kevincodercoza/scriptable/utils"
 )
 
 func GetSSHClient(server *ServerWithSShKey, intialConnect bool) (*sshclient.Client, error) {

@@ -7,7 +7,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
-	"plexcorp.tech/scriptable/utils"
+	"kevincodercoza/scriptable/utils"
 )
 
 type Server struct {

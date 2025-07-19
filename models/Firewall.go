@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"plexcorp.tech/scriptable/sshclient"
+	"kevincodercoza/scriptable/sshclient"
 )
 
 func GetRules(client *sshclient.Client) ([]string, error) {
