@@ -1,61 +1,102 @@
-<div class="row">
-   <div class="col-md-12 mb-2">
-<h2 class="az-dashboard-title">Add SSH Key</h2>
-  </div>
-
-  <div class="col-md-12">
-    <div class="card card-info">
-
-      <form class="form-horizontal" method="post" action="/sshkey/save/">
-        {% if sshkey_id != 0 %}
-          <input type="hidden" name="sshkey_id" value="{{sshkey_id}}" />
-        {% endif %}
-        <div class="card-body">
-          <div class="form-group row">
-            <label class="col-sm-2 col-form-label"
-              >Key name*</label
-            >
-            <div class="col-sm-10">
-                <input class="form-control" required name="name" value="{{name}}" />
-            </div>
-          </div>
-
-          <div class="form-group row">
-            <label class="col-sm-2 col-form-label"
-              >Private key*</label
-            >
-            <div class="col-sm-10">
-                <textarea class="form-control" required name="private_key">{{private_key}}</textarea>
-            </div>
-          </div>
-          <div class="form-group row">
-            <label class="col-sm-2 col-form-label"
-              >Public key*</label
-            >
-            <div class="col-sm-10">
-                <textarea class="form-control" required name="public_key">{{public_key}}</textarea>
-            </div>
-          </div>
-
-          <div class="form-group row">
-            <label class="col-sm-2 col-form-label"
-              >Key passphrase</label
-            >
-            <div class="col-sm-10">
-                <input class="form-control" name="passphrase"  type="password" value="{{passphrase}}" />
-            </div>
-          </div>
-
-
-        </div>
-
-        <div class="card-footer">
-          <button type="submit" class="btn btn-primary">SAVE</button>
-
-
-
-        </div>
-      </form>
+<!-- Page Header -->
+<div class="mb-8">
+  <div class="flex items-center">
+    <a href="/sshkeys" class="mr-4 text-gray-600 hover:text-gray-900 transition-colors duration-200">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+    </a>
+    <div>
+      <h1 class="text-3xl font-bold text-gray-900">{% if sshkey_id != 0 %}Edit{% else %}Add{% endif %} SSH Key</h1>
+      <p class="mt-2 text-sm text-gray-700">{% if sshkey_id != 0 %}Update your SSH key configuration{% else %}Add a new SSH key for server authentication{% endif %}</p>
     </div>
   </div>
+</div>
+
+<!-- SSH Key Form -->
+<div class="bg-white shadow-sm rounded-lg border border-gray-200">
+  <div class="px-6 py-4 border-b border-gray-200">
+    <h3 class="text-lg font-medium text-gray-900">SSH Key Details</h3>
+    <p class="mt-1 text-sm text-gray-500">Enter your SSH key information for secure server access</p>
+  </div>
+  
+  <form method="post" action="/sshkey/save/" class="px-6 py-6 space-y-6">
+    {% if sshkey_id != 0 %}
+      <input type="hidden" name="sshkey_id" value="{{sshkey_id}}" />
+    {% endif %}
+    
+    <!-- Key Name -->
+    <div>
+      <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+        Key Name <span class="text-red-500">*</span>
+      </label>
+      <input type="text" 
+             id="name" 
+             name="name" 
+             required 
+             value="{{name}}" 
+             class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200"
+             placeholder="Enter a descriptive name for this SSH key">
+      <p class="mt-1 text-sm text-gray-500">A unique name to identify this SSH key</p>
+    </div>
+
+    <!-- Private Key -->
+    <div>
+      <label for="private_key" class="block text-sm font-medium text-gray-700 mb-2">
+        Private Key <span class="text-red-500">*</span>
+      </label>
+      <textarea id="private_key" 
+                name="private_key" 
+                required 
+                rows="8" 
+                class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 font-mono text-sm"
+                placeholder="-----BEGIN OPENSSH PRIVATE KEY-----">{{private_key}}</textarea>
+      <p class="mt-1 text-sm text-gray-500">The private key content (keep this secure)</p>
+    </div>
+
+    <!-- Public Key -->
+    <div>
+      <label for="public_key" class="block text-sm font-medium text-gray-700 mb-2">
+        Public Key <span class="text-red-500">*</span>
+      </label>
+      <textarea id="public_key" 
+                name="public_key" 
+                required 
+                rows="4" 
+                class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 font-mono text-sm"
+                placeholder="ssh-rsa AAAAB3NzaC1yc2E...">{{public_key}}</textarea>
+      <p class="mt-1 text-sm text-gray-500">The public key content (safe to share)</p>
+    </div>
+
+    <!-- Key Passphrase -->
+    <div>
+      <label for="passphrase" class="block text-sm font-medium text-gray-700 mb-2">
+        Key Passphrase
+      </label>
+      <input type="password" 
+             id="passphrase" 
+             name="passphrase" 
+             value="{{passphrase}}" 
+             class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200"
+             placeholder="Enter passphrase if your key is encrypted">
+      <p class="mt-1 text-sm text-gray-500">Optional: Enter the passphrase if your private key is encrypted</p>
+    </div>
+
+    <!-- Submit Button -->
+    <div class="flex justify-end pt-4 border-t border-gray-200">
+      <div class="flex space-x-3">
+        <a href="/sshkeys" 
+           class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+          Cancel
+        </a>
+        <button type="submit" 
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+          {% if sshkey_id != 0 %}Update{% else %}Save{% endif %} SSH Key
+        </button>
+      </div>
+    </div>
+  </form>
 </div>

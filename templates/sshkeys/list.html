@@ -1,77 +1,108 @@
-<div class="row">
-   <div class="col-md-12 mb-2">
-<h2 class="az-dashboard-title">SSH Keys         &nbsp;&nbsp;<a href="/sshkey/create"><i class="fa fa-plus" style="color:#67707c;font-size:1.2rem"></i></a>
-</h2>
-
+<!-- Page Header -->
+<div class="mb-8">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-900">SSH Keys</h1>
+      <p class="mt-2 text-sm text-gray-700">Manage SSH keys for server authentication</p>
+    </div>
+    <div class="mt-4 sm:mt-0">
+      <a href="/sshkey/create" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+        </svg>
+        Add SSH Key
+      </a>
+    </div>
   </div>
+  
+  <!-- Search -->
+  <div class="mt-6">
+    <div class="max-w-sm">
+      <form method="get" action="/sshkeys">
+        <div class="relative">
+          <input name="search" 
+                 type="search" 
+                 value="{{search}}" 
+                 class="block w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200" 
+                 placeholder="Search SSH keys...">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center">
+            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+          </div>
+          <button type="submit" class="absolute inset-y-0 right-0 pr-3 flex items-center">
+            <svg class="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 
-
-  <div class="col-md-12">
-    <div class="card">
-      <div class="card-body">
-            <div style="max-width:350px;padding-bottom:10px;vertical-align:top;">
-                <form action="/servers?page={{page}}" method="GET">
-                    <div class="input-group">
-                      <input
-                        name="search"
-                        type="search"
-                        value="{{search}}"
-                        class="form-control"
-                        placeholder="Type your keywords here"
-                      />
-                      <div class="input-group-append">
-                        <button type="submit" class="btn btn-lg btn-default">
-                          <i class="fa fa-search"></i>
-                        </button>
-                      </div>
-                    </div>
-                  </form>  
- 
+<!-- SSH Keys List -->
+<div class="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
+  <div class="px-6 py-4 border-b border-gray-200">
+    <h3 class="text-lg font-medium text-gray-900">SSH Keys</h3>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Key Name</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Added</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        {% for key in keys %}
+        <tr class="hover:bg-gray-50 transition-colors duration-200">
+          <td class="px-6 py-4 whitespace-nowrap">
+            <div class="flex items-center">
+              <svg class="w-5 h-5 text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+              </svg>
+              <div class="text-sm font-medium text-gray-900">{{key.Name}}</div>
             </div>
-
-            <table class="table table-striped table-bordered">
-            <thead>
-              <tr>
-                <th>SSH Key name</th>
-                <th>Date Added</th>
-                <th>Edit</th>
-              </tr>
-              </thead>
-              <tbody>
-            {% for key in keys %}
-              <tr>
-              <td>{{key.Name}}</td>
-              <td>{{key.CreatedAt}}</td>
-              <td><a href="/sshkey/edit/{{key.ID}}"><i class="far fa-edit"></i></a></td>
-              </tr>
-
-            {% endfor %}
-            </tbody>
-          </table>
-
-      </div>
-
-      <div class="card-footer">
-        <ul class="pagination pagination-sm m-0 float-right">
-          {% if prevPage > 0 %}
-          <li class="page-item">
-            <a
-              class="page-link"
-              href="/servers?page={{prevPage}}{{searchQuery}}"
-              ><< Prev</a
-            >
-          </li>
-          {% endif %}
-
-          <li class="page-item">
-            <a
-              class="page-link"
-              href="/servers?page={{nextPage}}{{searchQuery}}"
-              >Next >></a
-            >
-          </li>
-        </ul>
-      </div>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            {{key.CreatedAt}}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+            <a href="/sshkey/edit/{{key.ID}}" class="text-gray-600 hover:text-primary-600 transition-colors duration-200" title="Edit SSH key">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+              </svg>
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- Pagination -->
+  <div class="px-6 py-4 border-t border-gray-200">
+    <div class="flex justify-end">
+      <nav class="flex items-center space-x-2">
+        {% if prevPage > 0 %}
+        <a href="/sshkeys?page={{prevPage}}{{searchQuery}}" 
+           class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors duration-200">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+          </svg>
+          Previous
+        </a>
+        {% endif %}
+        <a href="/sshkeys?page={{nextPage}}{{searchQuery}}" 
+           class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors duration-200">
+          Next
+          <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </nav>
     </div>
   </div>
 </div>

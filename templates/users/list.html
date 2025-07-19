@@ -1,100 +1,151 @@
-<div class="row">
-<div class="col-md-12">
-<h2 class="az-dashboard-title">User Management &nbsp;&nbsp; <a href="/user/create"><i class="fa fa-plus" style="color:#67707c;font-size:1.2rem"></i></a></h2>
+<!-- Page Header -->
+<div class="mb-8">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-900">User Management</h1>
+      <p class="mt-2 text-sm text-gray-700">Manage user accounts and permissions</p>
+    </div>
+    <div class="mt-4 sm:mt-0">
+      <a href="/user/create" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+        </svg>
+        Add User
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Search and Table -->
+<div class="bg-white shadow-sm rounded-lg border border-gray-200">
+  <!-- Search Section -->
+  <div class="px-6 py-4 border-b border-gray-200">
+    <div class="max-w-sm">
+      <form action="/user/list?page={{page}}" method="GET">
+        <div class="relative">
+          <input name="search" 
+                 type="search" 
+                 value="{{search}}" 
+                 class="block w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200" 
+                 placeholder="Search users...">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center">
+            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+          </div>
+          <button type="submit" class="absolute inset-y-0 right-0 pr-3 flex items-center">
+            <svg class="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 
-  <div class="col-md-12">
-    <div class="card">
-      <div class="card-body">
-            <div style="max-width:350px;padding-bottom:10px;vertical-align:top;">
-                <form action="/user/list?page={{page}}" method="GET">
-                    <div class="input-group">
-                      <input
-                        name="search"
-                        type="search"
-                        value="{{search}}"
-                        class="form-control"
-                        placeholder="Type your keywords here"
-                      />
-                      <div class="input-group-append">
-                        <button type="submit" class="btn btn-lg btn-default">
-                          <i class="fa fa-search"></i>
-                        </button>
-                      </div>
-                    </div>
-                  </form>  
- 
+  <!-- Table -->
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        {% for user in users %}
+        <tr class="hover:bg-gray-50 transition-colors duration-200">
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{user.ID}}</td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <div class="text-sm font-medium text-gray-900">{{user.Name}}</div>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <div class="text-sm text-gray-900">{{user.Email}}</div>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            {% if user.Verified == 1 %}
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+              <svg class="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+              Active
+            </span>
+            {% else %}
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+              <svg class="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+              </svg>
+              Inactive
+            </span>
+            {% endif %}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{user.CreatedAt}}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+            <div class="flex space-x-2">
+              <form method="post" action="/user/actions" class="inline">
+                <input type="hidden" name="action" value="{% if user.Verified == 1 %}deactivate{% else %}activate{% endif %}" />
+                <input type="hidden" name="user_id" value="{{user.ID}}" />
+                {% if user.Verified == 1 %}
+                <button type="submit" class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
+                  <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364L18.364 5.636"/>
+                  </svg>
+                  Disable
+                </button>
+                {% else %}
+                <button type="submit" class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200">
+                  <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  Enable
+                </button>
+                {% endif %}
+              </form>
+
+              <form method="post" action="/user/actions" class="inline">
+                <input type="hidden" name="action" value="sendpassword" />
+                <input type="hidden" name="user_id" value="{{user.ID}}" />
+                <input type="hidden" name="user_email" value="{{user.Email}}" />
+                <button type="submit" class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                  <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1721 9z"/>
+                  </svg>
+                  Reset
+                </button>
+              </form>
             </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
-        <table class="table table-bordered">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Active</th>
-              <th>Created on</th>
-              <th>#</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for user in users %}
-            <tr>
-              <td>{{user.ID}}</td>
-              <td>{{user.Name}}</td>
-              <td>{{user.Email}}</td>
-              <td>{% if user.Verified == 1 %} Yes {% else %} No {% endif %}</td>
-              <td>{{user.CreatedAt}}</td>
-          
-              <td>
-                <form method="post" action="/user/actions">
-                    <input type="hidden" name="action" value="{% if user.Verified == 1 %}deactivate{% else %}activate{% endif %}" />
-                    <input type="hidden" name="user_id" value="{{user.ID}}" />
-                    {% if user.Verified == 1 %}
-                    <input type="submit" value="Disable Login" class="btn btn-danger btn-sm"/>
-                    {% else %}
-                    <input type="submit" value="Enable Login" class="btn btn-success btn-sm"/>
-
-                    {% endif %}
-                </form>
-
-                <form method="post" action="/user/actions" style="margin-top:5px;">
-                    <input type="hidden" name="action" value="sendpassword" />
-                    <input type="hidden" name="user_id" value="{{user.ID}}" />
-                    <input type="hidden" name="user_email" value="{{user.Email}}" />
-    
-                    <input type="submit" value="Password reset" class="btn btn-info btn-sm"/>
-
-
-                </form>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-
-      <div class="card-footer clearfix">
-        <ul class="pagination pagination-sm m-0 float-right">
-          {% if prevPage > 0 %}
-          <li class="page-item">
-            <a
-              class="page-link"
-              href="/user/list?page={{prevPage}}{{searchQuery}}"
-              ><< Prev</a
-            >
-          </li>
-          {% endif %}
-
-          <li class="page-item">
-            <a
-              class="page-link"
-              href="/user/list?page={{nextPage}}{{searchQuery}}"
-              >Next >></a
-            >
-          </li>
-        </ul>
-      </div>
+  <!-- Pagination -->
+  <div class="px-6 py-4 border-t border-gray-200">
+    <div class="flex justify-end">
+      <nav class="flex items-center space-x-2">
+        {% if prevPage > 0 %}
+        <a href="/user/list?page={{prevPage}}{{searchQuery}}" 
+           class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors duration-200">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+          </svg>
+          Previous
+        </a>
+        {% endif %}
+        <a href="/user/list?page={{nextPage}}{{searchQuery}}" 
+           class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors duration-200">
+          Next
+          <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </nav>
     </div>
   </div>
 </div>

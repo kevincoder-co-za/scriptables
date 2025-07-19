@@ -1,17 +1,19 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"kevincodercoza/scriptable/models"
+	"kevincodercoza/scriptable/utils"
+
 	"github.com/labstack/echo/v4"
 	"github.com/noirbizarre/gonja"
 	"github.com/pquerna/otp/totp"
-	"kevincodercoza/scriptable/models"
-	"kevincodercoza/scriptable/utils"
 )
 
 func (c *Controller) MyProfile(gctx echo.Context) error {
@@ -91,6 +93,8 @@ func (c *Controller) CheckLogin(gctx echo.Context) error {
 	password := strings.Trim(gctx.FormValue("password"), " ")
 	if email == "" || password == "" {
 		vars["errors"] = []string{"Please enter a valid email address and password."}
+		vars["email"] = email
+		return c.RenderAuth("users/login", vars, gctx)
 	}
 
 	db := models.GetDB()
@@ -106,21 +110,22 @@ func (c *Controller) CheckLogin(gctx echo.Context) error {
 		return c.RenderAuth("users/two_factor_confirm", vars, gctx)
 	}
 
-	if len(vars["errors"].([]string)) == 0 {
-		user, err := models.Authenticate(email, password, gctx.Request().RemoteAddr)
-		if err != nil {
-			vars["errors"] = []string{err.Error()}
-		}
+	authenticatedUser, err := models.Authenticate(email, password, gctx.Request().RemoteAddr)
+	if err != nil {
+		vars["errors"] = []string{err.Error()}
+		vars["email"] = email
+		return c.RenderAuth("users/login", vars, gctx)
+	}
 
-		if user.ID != 0 && user.Email != "" {
-			values := make(map[string]interface{})
-			values["user_id"] = user.ID
-			c.SetSessionValues(values, gctx)
-			return gctx.Redirect(http.StatusFound, "/")
-		}
+	if authenticatedUser.ID != 0 && authenticatedUser.Email != "" {
+		values := make(map[string]interface{})
+		values["user_id"] = authenticatedUser.ID
+		c.SetSessionValues(values, gctx)
+		return gctx.Redirect(http.StatusFound, "/")
 	}
 
 	vars["errors"] = []string{"Invalid username or password."}
+	vars["email"] = email
 	return c.RenderAuth("users/login", vars, gctx)
 }
 

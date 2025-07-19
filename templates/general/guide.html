@@ -1,32 +1,71 @@
-<div class="row">
-  <div class="col-md-12" style="text-align:center">
-        <h4 class="alert-heading">{{title}}</h4>
-
-        <p>
-            Please see below a short video tour of Scriptables. If you need any further information or help - please feel free to contact us on:
-            <a href="mailto:support@plexscriptables.com">support@plexscriptables.com</a><br />
-        </p>
-       <div id="video-container">
-        <img src="/static/img/loader.gif" alt="Loading..." id="loading-gif">
-        <video width="100%" controls id="video-player">
-            <source src="/static/guide.mp4" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
-    </div>
-
+<!-- Page Header -->
+<div class="mb-8">
+  <div class="text-center">
+    <h1 class="text-3xl font-bold text-gray-900">{{title}}</h1>
+    <p class="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">
+      Please see below a short video tour of Scriptables. If you need any further information or help - please feel free to contact us at:
+      <a href="mailto:support@plexscriptables.com" class="text-primary-600 hover:text-primary-500 font-medium">support@plexscriptables.com</a>
+    </p>
   </div>
-
 </div>
 
-    <script>
-        const videoPlayer = document.getElementById("video-player");
-        const loadingGif = document.getElementById("loading-gif");
+<!-- Video Section -->
+<div class="max-w-4xl mx-auto">
+  <div class="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200">
+      <h3 class="text-lg font-medium text-gray-900">Getting Started Guide</h3>
+      <p class="mt-1 text-sm text-gray-500">Watch this video to learn how to use Scriptables</p>
+    </div>
+    
+    <div class="p-6">
+      <div class="relative bg-gray-900 rounded-lg overflow-hidden" id="video-container">
+        <!-- Loading State -->
+        <div id="loading-gif" class="absolute inset-0 flex items-center justify-center bg-gray-900">
+          <div class="text-center">
+            <svg class="animate-spin h-12 w-12 text-white mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            <p class="text-white text-sm">Loading video...</p>
+          </div>
+        </div>
+        
+        <!-- Video Player -->
+        <video class="w-full aspect-video" controls id="video-player">
+          <source src="/static/guide.mp4" type="video/mp4">
+          <div class="bg-gray-800 text-white p-8 text-center">
+            <svg class="h-12 w-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+            </svg>
+            <p>Your browser does not support the video tag.</p>
+            <p class="text-sm text-gray-400 mt-2">Please try using a modern browser like Chrome, Firefox, or Safari.</p>
+          </div>
+        </video>
+      </div>
+      
+      <!-- Video Controls Info -->
+      <div class="mt-4 text-center">
+        <p class="text-sm text-gray-500">
+          Use the video controls to play, pause, adjust volume, and go fullscreen
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
 
-        videoPlayer.addEventListener("loadeddata", () => {
-            loadingGif.style.display = "none";
-        });
+<script>
+  const videoPlayer = document.getElementById("video-player");
+  const loadingGif = document.getElementById("loading-gif");
 
-        videoPlayer.addEventListener("error", () => {
-            loadingGif.style.display = "none";
-        });
-    </script>
+  videoPlayer.addEventListener("loadeddata", () => {
+    loadingGif.classList.add("hidden");
+  });
+
+  videoPlayer.addEventListener("error", () => {
+    loadingGif.classList.add("hidden");
+  });
+  
+  // Show loading if video takes too long
+  videoPlayer.addEventListener("loadstart", () => {
+    loadingGif.classList.remove("hidden");
+  });
+</script>

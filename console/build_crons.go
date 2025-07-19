@@ -6,8 +6,9 @@ package console
 import (
 	"fmt"
 
-	"gorm.io/gorm"
 	"kevincodercoza/scriptable/models"
+
+	"gorm.io/gorm"
 )
 
 func setCronStatus(db *gorm.DB, id int64, status string) {
@@ -29,6 +30,12 @@ func processCron(db *gorm.DB, cron *models.Cron) {
 	var ServerCrons []*models.Cron
 
 	server := models.GetServer(cron.ServerID, cron.TeamID)
+	if server.ID == 0 {
+		setCronStatus(db, cron.ID, models.STATUS_FAILED)
+		models.LogError(cron.ID, "cron", "Server not found",
+			fmt.Sprintf("Server with ID %d not found", cron.ServerID), cron.TeamID)
+		return
+	}
 
 	db.Table("crons").Where("server_id=? and deleted_at IS NULL", cron.ServerID).Scan(&ServerCrons)
 

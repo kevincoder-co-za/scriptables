@@ -1,3 +1,4 @@
 appdb.db
 .env
 rundev.sh
+tmp

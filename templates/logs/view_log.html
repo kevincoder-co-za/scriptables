@@ -1,8 +1,44 @@
 <!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>Viewing full raw log</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Full Log View</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body style="background-color: #0e0d0dd4;color:#fff;font-size:1rem;">
-<pre>{{log}}</pre>
+<body class="bg-gray-900 text-white min-h-screen">
+    <div class="container mx-auto px-4 py-6">
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold text-white mb-2">Full Log View</h1>
+            <button onclick="window.close()" class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-300 bg-gray-800 border border-gray-600 rounded-lg hover:bg-gray-700 hover:text-white transition-colors duration-200">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+                Close
+            </button>
+        </div>
+        
+        <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+            <div class="p-4">
+                <pre class="text-sm text-gray-100 whitespace-pre-wrap break-words font-mono leading-relaxed">{{log}}</pre>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

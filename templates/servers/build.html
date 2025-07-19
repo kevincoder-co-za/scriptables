@@ -1,35 +1,72 @@
-<div class="row">
-  <div class="col-md-12 py-2 pb-4">
-    <h2 class="page-title">Pick a server template to deploy</h2>
+<!-- Page Header -->
+<div class="mb-8">
+  <div class="text-center">
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">Choose Server Template</h1>
+    <p class="text-lg text-gray-600">Select a server template to deploy and configure your infrastructure</p>
   </div>
 </div>
-<div class="row">
+
+<!-- Server Type Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
   {% for s in serverTypes %}
-    <div class="col-md-6 mb-2">
-      <div class="card card-sm">
-        <div class="card-body">
-          <div class="row align-items-center">
-            <div class="col-auto">
-              <span class="bg-x text-white"><img src="/static/icons/{{ s.Slug }}.svg" style="max-width:100px" /></span>
-            </div>
-            <div class="col">
-              <div class="font-weight-medium">
-                <h5 class="card-title">{{ s.Name }}</h5>
-              </div>
-              <div class="text-secondary">
-                <div style="display:flex;justify-content: space-between;gap:5px;">
-                  <div>
-                    <p class="card-text">{{ s.Description }}</p>
-                  </div>
-                  <div>
-                    <a href="/server/create/{{ s.Slug }}" class="btn btn-primary d-none d-sm-inline-block">Deploy >></a>
-                  </div>
-                </div>
-              </div>
-            </div>
+  <div class="group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-primary-300 transition-all duration-300 overflow-hidden">
+    <!-- Card Header with Icon -->
+    <div class="p-6 pb-4">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex-shrink-0">
+          <div class="w-16 h-16 bg-gradient-to-br from-primary-50 to-primary-100 rounded-lg flex items-center justify-center group-hover:from-primary-100 group-hover:to-primary-200 transition-colors duration-300">
+            <img src="/static/icons/{{ s.Slug }}.svg" class="w-10 h-10" alt="{{ s.Name }}" />
           </div>
         </div>
+        <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <svg class="w-5 h-5 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+          </svg>
+        </div>
       </div>
+      
+      <h3 class="text-xl font-semibold text-gray-900 mb-2 group-hover:text-primary-700 transition-colors duration-300">
+        {{ s.Name }}
+      </h3>
+      
+      <p class="text-gray-600 text-sm leading-relaxed mb-4">
+        {{ s.Description }}
+      </p>
     </div>
+    
+    <!-- Card Footer with Deploy Button -->
+    <div class="px-6 pb-6">
+      <a href="/server/create/{{ s.Slug }}" 
+         class="block w-full text-center py-3 px-4 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-300 transform group-hover:scale-[1.02]">
+        <span class="flex items-center justify-center">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
+          </svg>
+          Deploy Server
+        </span>
+      </a>
+    </div>
+    
+    <!-- Subtle background pattern -->
+    <div class="absolute top-0 right-0 w-32 h-32 transform translate-x-8 -translate-y-8">
+      <div class="w-full h-full bg-gradient-to-br from-primary-50/30 to-transparent rounded-full"></div>
+    </div>
+  </div>
   {% endfor %}
+</div>
+
+<!-- Additional Info Section -->
+<div class="mt-12 text-center">
+  <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-2xl mx-auto">
+    <div class="flex items-center justify-center mb-3">
+      <svg class="w-6 h-6 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <h3 class="text-lg font-medium text-blue-900">Need Help Choosing?</h3>
+    </div>
+    <p class="text-blue-700 text-sm">
+      Each template comes pre-configured with best practices and security settings. 
+      You can customize the configuration after deployment.
+    </p>
+  </div>
 </div>

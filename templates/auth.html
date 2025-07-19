@@ -1,188 +1,111 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<title>{{title}}</title>
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<link rel="stylesheet" href="/static/js/fontawesome/css/all.min.css" />
-<link rel="stylesheet" href="/static/js/bootstrap/dist/css/bootstrap.min.css" />
-
-<style>
-.login-page
-{
-  background-color:#e5e7ed
-}
-.login-page main
-{
-  width:100%;
-  max-width:460px;
-  margin:8% auto 5%
-}
-.login-block
-{
-  background-color:#fff;
-  padding:60px;
-  -webkit-box-shadow:0 3px 50px 0 rgba(0,0,0,.1);
-  box-shadow:0 3px 50px 0 rgba(0,0,0,.1);
-  text-align:center;
-  border-radius:5px
-}
-.login-block h1,.login-block h6
-{
-  font-family:Open Sans,sans-serif;
-  color:#96a2b2;
-  letter-spacing:1px
-}
-.login-block h1
-{
-  font-size:22px;
-  margin-bottom:60px;
-  margin-top:40px
-}
-.login-block h6
-{
-  font-size:11px;
-  text-transform:uppercase;
-  margin-top:0
-}
-.login-block .form-group
-{
-  margin-top:15px;
-  margin-bottom:15px;
-}
-
-.login-block input:-webkit-autofill
-{
-  -webkit-box-shadow:0 0 0 1000px #fff inset;
-  -webkit-text-fill-color:#818a91;
-  -webkit-transition:none;
-  -o-transition:none;
-  transition:none;
-}
-.login-block .input-group-addon
-{
-  color:#29aafe;
-  font-size:19px;
-  opacity:.5
-}
-.login-block .btn-block
-{
-  margin-top:30px;
-  padding:15px;
-  background:#29aafe;
-  border-color:#29aafe;
-}
-.login-block .hr-xs
-{
-  margin-top:5px;
-  margin-bottom:5px
-}
-.login-footer
-{
-  margin-top:60px;
-  opacity:.5;
-  -webkit-transition:opacity .3s ease-in-out;
-  -o-transition:opacity .3s ease-in-out;
-  transition:opacity .3s ease-in-out
-}
-.login-footer:hover
-{
-  opacity:1
-}
-.login-links
-{
-  padding:15px 5px 0;
-  font-size:13px;
-  color:#96a2b2
-}
-.login-links:after
-{
-  content:'';
-  display:table;
-  clear:both
-}
-.login-links a
-{
-  color:#96a2b2;
-  opacity:.9
-}
-.login-links a:hover
-{
-  color:#29aafe;
-  opacity:1
-}
-@media (max-width:767px)
-{
-  .login-page main
-  {
-    position:static;
-    top:auto;
-    left:auto;
-    -webkit-transform:none;
-    -o-transform:none;
-    transform:none;
-    padding:30px 15px
-  }
-  .login-block{padding:20px}}
-
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    },
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body>
-  <body class="login-page">
-
-
-    <main>
-
-      <div class="login-block">
-        <img src="/static/img/logo.png" alt="Scanfcode">
-        <h1>{{title}}</h1>
-                  {% if errors is defined %}
-            <div class="alert alert-danger alert-dismissible fade show">
-              <button
-                type="button"
-                class="close"
-                data-dismiss="alert"
-                data-bs-dismiss="alert"
-                aria-label="Close"
-              >
-                ×
-              </button>
-              <h5>
-                <i class="icon fas fa-ban"></i> Oops! - please review the
-                following errors and try again
-              </h5>
-              <ol>
-                {% for e in errors %}
-                <li>{{e}}</li>
-                {% endfor %}
-              </ol>
+<body class="bg-gray-50">
+    <!-- Error Messages -->
+    {% if errors is defined %}
+    <div class="fixed top-4 right-4 z-50 max-w-md">
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-red-800">Please review the following errors:</h3>
+                    <div class="mt-2 text-sm text-red-700">
+                        <ul class="list-disc pl-5 space-y-1">
+                            {% for e in errors %}
+                            <li>{{e}}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                <div class="ml-auto pl-3">
+                    <div class="-mx-1.5 -my-1.5">
+                        <button type="button" onclick="this.parentElement.parentElement.parentElement.parentElement.remove()" class="inline-flex bg-red-50 rounded-md p-1.5 text-red-500 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-red-50 focus:ring-red-600">
+                            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
             </div>
-            {% endif %} 
-            {%if successMsg is defined %}
-            <div class="alert alert-success alert-dismissible fade show">
-              <button
-                type="button"
-                class="close"
-                data-dismiss="alert"
-                aria-label="Close"
-                data-bs-dismiss="alert"
-              >
-                ×
-              </button>
-              <h5><i class="icon fas fa-check"></i> Success!</h5>
-              {{successMsg}}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Success Messages -->
+    {% if successMsg is defined %}
+    <div class="fixed top-4 right-4 z-50 max-w-md">
+        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-green-800">Success!</h3>
+                    <div class="mt-2 text-sm text-green-700">
+                        {{successMsg}}
+                    </div>
+                </div>
+                <div class="ml-auto pl-3">
+                    <div class="-mx-1.5 -my-1.5">
+                        <button type="button" onclick="this.parentElement.parentElement.parentElement.parentElement.remove()" class="inline-flex bg-green-50 rounded-md p-1.5 text-green-500 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-green-50 focus:ring-green-600">
+                            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
             </div>
-       
-            {% endif %}
-
-            
-            {{view}}
-
-      </div>
-
-
-    </main>
-    <script src="/static/js/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/static/js/fontawesome/js/all.min.js"> </script>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Main Content -->
+    {{view}}
 </body>
 </html>

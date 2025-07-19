@@ -1,143 +1,264 @@
 <!doctype html>
-<!--
-* Tabler - Premium and Open Source dashboard template with responsive and high quality UI.
-* @version 1.0.0-beta20
-* @link https://tabler.io
-* Copyright 2018-2023 The Tabler Authors
-* Copyright 2018-2023 codecalm.net Paweł Kuna
-* Licensed under MIT (https://github.com/tabler/tabler/blob/master/LICENSE)
--->
 <html lang="en">
   <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
     <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
-    <title>Dashboard - Tabler - Premium and Open Source dashboard template with responsive and high quality UI.</title>
-    <!-- CSS files -->
-    <link href="/static/tabler/css/tabler.min.css?1692870487" rel="stylesheet"/>
-    <link href="/static/tabler/css/tabler-flags.min.css?1692870487" rel="stylesheet"/>
-    <link href="/static/tabler/css/tabler-payments.min.css?1692870487" rel="stylesheet"/>
-    <link href="/static/tabler/css/tabler-vendors.min.css?1692870487" rel="stylesheet"/>
-    <link href="/static/tabler/css/demo.min.css?1692870487" rel="stylesheet"/>
+    <title>{{title}} - Scriptables</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Heroicons for icons -->
+    <script src="https://unpkg.com/heroicons@2.0.0/24/outline/index.js" type="module"></script>
     <style>
-      @import url('https://rsms.me/inter/inter.css');
-      :root {
-      	--tblr-font-sans-serif: 'Inter Var', -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif;
-      }
       body {
-      	font-feature-settings: "cv03", "cv04", "cv11";
+        font-family: 'Inter', sans-serif;
       }
     </style>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                50: '#eff6ff',
+                500: '#3b82f6',
+                600: '#2563eb',
+                700: '#1d4ed8',
+                900: '#1e3a8a',
+              }
+            }
+          }
+        }
+      }
+    </script>
   </head>
-  <body >
-    <script src="/static/tabler/js/demo-theme.min.js?1692870487"></script>
-    <div class="page">
-      <!-- Navbar -->
-      <header class="navbar navbar-expand-md d-print-none" >
-        <div class="container-xl">
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-          </button>
-          <h1 class="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3">
-            <a href=".">
-              Scriptables
-            </a>
-          </h1>
-          <div class="navbar-nav flex-row order-md-last">
-     
-            <div class="nav-item dropdown">
-              <a href="#" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown" aria-label="Open user menu">
-                <div class="d-none d-xl-block ps-2">
-                  <div>Paweł Kuna</div>
-                </div>
-              </a>
-              <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                <a href="#" class="dropdown-item">Status</a>
-                <a href="./profile.html" class="dropdown-item">Profile</a>
-                <a href="#" class="dropdown-item">Feedback</a>
-                <div class="dropdown-divider"></div>
-                <a href="./settings.html" class="dropdown-item">Settings</a>
-                <a href="./sign-in.html" class="dropdown-item">Logout</a>
+  <body class="bg-gray-100 min-h-screen">
+    <nav class="bg-white shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <img src="/static/img/logo.png" />
+            </div>
+            <div class="hidden md:block">
+              <div class="ml-10 flex items-baseline space-x-4">
+                <a href="/servers" class="group flex items-center px-3 py-2 rounded-md text-base font-medium {% if highlight == 'servers' %}text-gray-900 bg-gray-100{% else %}text-black hover:text-black hover:bg-gray-100{% endif %}">
+                  <svg class="h-6 w-6 mr-2 {% if highlight == 'servers' %}text-gray-900{% else %}text-gray-800 group-hover:text-black{% endif %}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                  Servers
+                </a>
+                <a href="/sites" class="group flex items-center px-3 py-2 rounded-md text-base font-medium {% if highlight == 'sites' %}text-gray-900 bg-gray-100{% else %}text-black hover:text-black hover:bg-gray-100{% endif %}">
+                  <svg class="h-6 w-6 mr-2 {% if highlight == 'sites' %}text-gray-900{% else %}text-gray-800 group-hover:text-black{% endif %}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                  </svg>
+                  Projects
+                </a>
+                <a href="/crons" class="group flex items-center px-3 py-2 rounded-md text-base font-medium {% if highlight == 'crons' %}text-gray-900 bg-gray-100{% else %}text-black hover:text-black hover:bg-gray-100{% endif %}">
+                  <svg class="h-6 w-6 mr-2 {% if highlight == 'crons' %}text-gray-900{% else %}text-gray-800 group-hover:text-black{% endif %}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  CRONs
+                </a>
+                <a href="/sshkeys" class="group flex items-center px-3 py-2 rounded-md text-base font-medium {% if highlight == 'sshkeys' %}text-gray-900 bg-gray-100{% else %}text-black hover:text-black hover:bg-gray-100{% endif %}">
+                  <svg class="h-6 w-6 mr-2 {% if highlight == 'sshkeys' %}text-gray-900{% else %}text-gray-800 group-hover:text-black{% endif %}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 5.25a3 3 0 013 3m-3-3a3 3 0 00-3 3m3-3h.008v.008h-.008v-.008zm-3 3h.008v.008h-.008v-.008zm-3 3h.008v.008h-.008v-.008zm-3 3h.008v.008h-.008v-.008zM9 15a3 3 0 100-6 3 3 0 000 6z" />
+                  </svg>
+                  SSH Keys
+                </a>
+                <a href="/user/list" class="group flex items-center px-3 py-2 rounded-md text-base font-medium {% if highlight == 'users' %}text-gray-900 bg-gray-100{% else %}text-black hover:text-black hover:bg-gray-100{% endif %}">
+                  <svg class="h-6 w-6 mr-2 {% if highlight == 'users' %}text-gray-900{% else %}text-gray-800 group-hover:text-black{% endif %}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.653-.28-1.25-1.25-1.65M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.653.28-1.25 1.25-1.65M12 12a4 4 0 100-8 4 4 0 000 8z" />
+                  </svg>
+                  Users
+                </a>
               </div>
             </div>
           </div>
-          <div class="collapse navbar-collapse" id="navbar-menu">
-            <div class="d-flex flex-column flex-md-row flex-fill align-items-stretch align-items-md-center">
-              <ul class="navbar-nav">
-                <li class="nav-item">
-                  <a class="nav-link" href="/servers">
-                    <span class="nav-link-icon d-md-none d-lg-inline-block"><!-- Download SVG icon from http://tabler-icons.io/i/home -->
-                      <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l-2 0l9 -9l9 9l-2 0" /><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" /><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" /></svg>
-                    </span>
-                    <span class="nav-link-title">
-                      Servers
-                    </span>
-                  </a>
-                </li>
-
-                <li class="nav-item">
-                  <a class="nav-link" href="/sites" >
-                    <span class="nav-link-icon d-md-none d-lg-inline-block"><!-- Download SVG icon from http://tabler-icons.io/i/home -->
-                      <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-category-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 4h6v6h-6z" /><path d="M4 14h6v6h-6z" /><path d="M17 17m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M7 7m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /></svg>
-                    </span>
-                    <span class="nav-link-title">
-                      Projects
-                    </span>
-                  </a>
-                </li>
-
-
-                <li class="nav-item">
-                  <a class="nav-link" href="/crons" >
-                    <span class="nav-link-icon d-md-none d-lg-inline-block"><!-- Download SVG icon from http://tabler-icons.io/i/home -->
-                      <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-calendar-time"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" /><path d="M18 18m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" /><path d="M15 3v4" /><path d="M7 3v4" /><path d="M3 11h16" /><path d="M18 16.496v1.504l1 1" /></svg>                    </span>
-                    <span class="nav-link-title">
-                      CRONs
-                    </span>
-                  </a>
-                </li>
-
-
-                <li class="nav-item">
-                  <a class="nav-link" href="/sshkeys" >
-                    <span class="nav-link-icon d-md-none d-lg-inline-block"><!-- Download SVG icon from http://tabler-icons.io/i/home -->
-                      <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-cloud-lock"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M19 18a3.5 3.5 0 0 0 0 -7h-1c.397 -1.768 -.285 -3.593 -1.788 -4.787c-1.503 -1.193 -3.6 -1.575 -5.5 -1s-3.315 2.019 -3.712 3.787c-2.199 -.088 -4.155 1.326 -4.666 3.373c-.512 2.047 .564 4.154 2.566 5.027" /><path d="M8 15m0 1a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1v3a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1z" /><path d="M10 15v-2a2 2 0 1 1 4 0v2" /></svg>
-                    </span>
-                    <span class="nav-link-title">
-                      SSH Keys
-                    </span>
-                  </a>
-                </li>
-
-                <li class="nav-item">
-                  <a class="nav-link" href="/user/list" >
-                    <span class="nav-link-icon d-md-none d-lg-inline-block"><!-- Download SVG icon from http://tabler-icons.io/i/home -->
-                      <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l-2 0l9 -9l9 9l-2 0" /><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" /><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" /></svg>
-                    </span>
-                    <span class="nav-link-title">
-                      Users
-                    </span>
-                  </a>
-                </li>
-               
-              </ul>
+          <div class="hidden md:block">
+            <div class="ml-4 flex items-center md:ml-6">
+              <div class="ml-3 relative">
+                <div>
+                  <button id="user-menu-button" type="button" class="max-w-xs bg-white rounded-full flex items-center text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" aria-expanded="false" aria-haspopup="true">
+                    <span class="sr-only">Open user menu</span>
+                    <div class="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                      <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                      </svg>
+                    </div>
+                  </button>
+                </div>
+                <div id="user-menu" class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden" role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" tabindex="-1">
+                  <a href="/user/profile" class="block px-4 py-2 text-sm text-black" role="menuitem" tabindex="-1">Your Profile</a>
+                  <a href="/users/logout" class="block px-4 py-2 text-sm text-black" role="menuitem" tabindex="-1">Sign out</a>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
-      <div class="page-wrapper">
- 
-        <!-- Page body -->
-        <div class="page-body">
-          <div class="container-xl">
-            {{view}}
+          <div class="-mr-2 flex md:hidden">
+            <button id="mobile-menu-button" type="button" class="bg-white inline-flex items-center justify-center p-2 rounded-md text-gray-800 hover:text-black hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" aria-controls="mobile-menu" aria-expanded="false">
+              <span class="sr-only">Open main menu</span>
+              <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+              <svg class="hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         </div>
-   
       </div>
-    </div>
-  
-    <script src="/static/tabler/libs/apexcharts/dist/apexcharts.min.js?1692870487" defer></script>
-    <script src="/static/tabler/js/tabler.min.js?1692870487" defer></script>
+
+      <div class="md:hidden hidden" id="mobile-menu">
+        <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+          <a href="/servers" class="group flex items-center px-3 py-2 rounded-md text-base font-medium {% if highlight == 'servers' %}text-gray-900 bg-gray-100{% else %}text-black hover:text-black hover:bg-gray-100{% endif %}">
+            <svg class="h-6 w-6 mr-2 {% if highlight == 'servers' %}text-gray-900{% else %}text-gray-800 group-hover:text-black{% endif %}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+            Servers
+          </a>
+          <a href="/sites" class="group flex items-center px-3 py-2 rounded-md text-base font-medium {% if highlight == 'sites' %}text-gray-900 bg-gray-100{% else %}text-black hover:text-black hover:bg-gray-100{% endif %}">
+            <svg class="h-6 w-6 mr-2 {% if highlight == 'sites' %}text-gray-900{% else %}text-gray-800 group-hover:text-black{% endif %}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+            </svg>
+            Projects
+          </a>
+          <a href="/crons" class="group flex items-center px-3 py-2 rounded-md text-base font-medium {% if highlight == 'crons' %}text-gray-900 bg-gray-100{% else %}text-black hover:text-black hover:bg-gray-100{% endif %}">
+            <svg class="h-6 w-6 mr-2 {% if highlight == 'crons' %}text-gray-900{% else %}text-gray-800 group-hover:text-black{% endif %}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            CRONs
+          </a>
+          <a href="/sshkeys" class="group flex items-center px-3 py-2 rounded-md text-base font-medium {% if highlight == 'sshkeys' %}text-gray-900 bg-gray-100{% else %}text-black hover:text-black hover:bg-gray-100{% endif %}">
+            <svg class="h-6 w-6 mr-2 {% if highlight == 'sshkeys' %}text-gray-900{% else %}text-gray-800 group-hover:text-black{% endif %}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 5.25a3 3 0 013 3m-3-3a3 3 0 00-3 3m3-3h.008v.008h-.008v-.008zm-3 3h.008v.008h-.008v-.008zm-3 3h.008v.008h-.008v-.008zm-3 3h.008v.008h-.008v-.008zM9 15a3 3 0 100-6 3 3 0 000 6z" />
+            </svg>
+            SSH Keys
+          </a>
+          <a href="/user/list" class="group flex items-center px-3 py-2 rounded-md text-base font-medium {% if highlight == 'users' %}text-gray-900 bg-gray-100{% else %}text-black hover:text-black hover:bg-gray-100{% endif %}">
+            <svg class="h-6 w-6 mr-2 {% if highlight == 'users' %}text-gray-900{% else %}text-gray-800 group-hover:text-black{% endif %}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.653-.28-1.25-1.25-1.65M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.653.28-1.25 1.25-1.65M12 12a4 4 0 100-8 4 4 0 000 8z" />
+            </svg>
+            Users
+          </a>
+        </div>
+        <div class="pt-4 pb-3 border-t border-gray-200">
+          <div class="flex items-center px-5">
+            <div class="flex-shrink-0">
+              <div class="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+                <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+              </div>
+            </div>
+            <div class="ml-3">
+              <div class="text-base font-medium leading-none text-gray-800">User Account</div>
+            </div>
+          </div>
+          <div class="mt-3 px-2 space-y-1">
+            <a href="/user/profile" class="block px-3 py-2 rounded-md text-base font-medium text-black hover:text-black hover:bg-gray-100">Your Profile</a>
+            <a href="/users/logout" class="block px-3 py-2 rounded-md text-base font-medium text-black hover:text-black hover:bg-gray-100">Sign out</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <main>
+      <div class="py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <!-- Flash messages -->
+          {% if flash_success %}
+          <div class="mb-6">
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div class="flex">
+                <div class="flex-shrink-0">
+                  <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                </div>
+                <div class="ml-3">
+                  <p class="text-sm font-medium text-green-800">{{ flash_success }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          
+          {% if flash_error %}
+          <div class="mb-6">
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div class="flex">
+                <div class="flex-shrink-0">
+                  <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                  </svg>
+                </div>
+                <div class="ml-3">
+                  <p class="text-sm font-medium text-red-800">{{ flash_error }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          
+          {% if flash_warning %}
+          <div class="mb-6">
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div class="flex">
+                <div class="flex-shrink-0">
+                  <svg class="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                  </svg>
+                </div>
+                <div class="ml-3">
+                  <p class="text-sm font-medium text-yellow-800">{{ flash_warning }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          
+          <!-- Page content -->
+          {{view}}
+        </div>
+      </div>
+    </main>
+
+    <script>
+      // Mobile menu toggle
+      const mobileMenuButton = document.getElementById('mobile-menu-button');
+      const mobileMenu = document.getElementById('mobile-menu');
+
+      mobileMenuButton.addEventListener('click', () => {
+        const isExpanded = mobileMenuButton.getAttribute('aria-expanded') === 'true';
+        mobileMenuButton.setAttribute('aria-expanded', !isExpanded);
+        mobileMenu.classList.toggle('hidden');
+        
+        // Toggle icons
+        const openIcon = mobileMenuButton.querySelector('.block');
+        const closeIcon = mobileMenuButton.querySelector('.hidden');
+        openIcon.classList.toggle('hidden');
+        closeIcon.classList.toggle('hidden');
+      });
+
+      // User menu toggle
+      const userMenuButton = document.getElementById('user-menu-button');
+      const userMenu = document.getElementById('user-menu');
+
+      userMenuButton.addEventListener('click', () => {
+        userMenu.classList.toggle('hidden');
+      });
+
+      // Close user menu when clicking outside
+      document.addEventListener('click', (event) => {
+        if (userMenu && !userMenu.classList.contains('hidden') && !userMenuButton.contains(event.target) && !userMenu.contains(event.target)) {
+          userMenu.classList.add('hidden');
+        }
+      });
+    </script>
   </body>
 </html>

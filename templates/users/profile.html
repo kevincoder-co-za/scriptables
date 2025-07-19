@@ -1,49 +1,100 @@
-<div class="row">
-  <div class="col-md-12">
-    <div class="card">
-      <div class="card-body row">
-        <div class="col-md-12">
-            <form method="POST" action="/user/profile/update">
-          <div class="form-group">
-            <label for="inputName">Name</label>
-            <input type="text" id="name" name="name" value="{{user.Name}}" class="form-control" />
-          </div>
-          <div class="form-group">
-            <label for="inputEmail">E-Mail</label>
-            <input type="email" id="email" class="form-control" name="email" value="{{user.Email}}"/>
-          </div>
-          <div class="form-group">
-            <input type="checkbox" name="two_factor" id="two_factor" {% if user.TwoFactor == 1 %} checked {% endif %} onclick="handleCheckboxChange()"/> <label>Enable 2Factor Auth</label>
-            <div id="qrcode" style="display:none;">
-                <img src="/static/img/ajax.gif" id="loading-icon"/>
-                <br /> Please scan the above QR code with your Google authenticator app and hit "SAVE" below once done.
+<!-- Page Header -->
+<div class="mb-8">
+  <h1 class="text-3xl font-bold text-gray-900">Profile Settings</h1>
+  <p class="mt-2 text-sm text-gray-700">Manage your account information and security settings</p>
+</div>
+
+<!-- Profile Form -->
+<div class="bg-white shadow-sm rounded-lg border border-gray-200">
+  <div class="px-6 py-4 border-b border-gray-200">
+    <h3 class="text-lg font-medium text-gray-900">Account Information</h3>
+    <p class="mt-1 text-sm text-gray-500">Update your personal details and security preferences</p>
+  </div>
+  
+  <form method="POST" action="/user/profile/update" class="px-6 py-6 space-y-6">
+    <!-- Name Field -->
+    <div>
+      <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+      <input type="text" 
+             id="name" 
+             name="name" 
+             value="{{user.Name}}" 
+             class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200"
+             placeholder="Enter your full name">
+    </div>
+
+    <!-- Email Field -->
+    <div>
+      <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+      <input type="email" 
+             id="email" 
+             name="email" 
+             value="{{user.Email}}" 
+             class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200"
+             placeholder="Enter your email address">
+    </div>
+
+    <!-- Two Factor Authentication -->
+    <div class="space-y-4">
+      <div class="flex items-start">
+        <div class="flex items-center h-5">
+          <input type="checkbox" 
+                 name="two_factor" 
+                 id="two_factor" 
+                 {% if user.TwoFactor == 1 %} checked {% endif %} 
+                 onclick="handleCheckboxChange()"
+                 class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded transition-colors duration-200">
+        </div>
+        <div class="ml-3">
+          <label for="two_factor" class="text-sm font-medium text-gray-700">Enable Two-Factor Authentication</label>
+          <p class="text-sm text-gray-500">Add an extra layer of security to your account</p>
+        </div>
+      </div>
+      
+      <!-- QR Code Section -->
+      <div id="qrcode" class="hidden">
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div class="flex">
+            <div class="flex-shrink-0">
+              <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+              </svg>
             </div>
-
+            <div class="ml-3">
+              <h4 class="text-sm font-medium text-blue-800">Setup Two-Factor Authentication</h4>
+              <div class="mt-2">
+                <img src="/static/img/ajax.gif" id="loading-icon" class="mx-auto"/>
+                <p class="text-sm text-blue-700 mt-2">Please scan the above QR code with your Google Authenticator app and click "Save" below once done.</p>
+              </div>
+            </div>
           </div>
-
-          <div class="form-group">
-            <input type="submit" class="btn btn-primary" value="SAVE" />
-          </div>
-
-          </form>
         </div>
       </div>
     </div>
-  </div>
+
+    <!-- Submit Button -->
+    <div class="flex justify-end pt-4 border-t border-gray-200">
+      <button type="submit" 
+              class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+        Save Changes
+      </button>
+    </div>
+  </form>
 </div>
 
 <script>
-    function handleCheckboxChange() {
-  var checkbox = document.getElementById("two_factor");
-  var qrcodeDiv = document.getElementById("qrcode");
+  function handleCheckboxChange() {
+    var checkbox = document.getElementById("two_factor");
+    var qrcodeDiv = document.getElementById("qrcode");
 
-  if (checkbox.checked) {
-    qrcodeDiv.style.display = "block";
-    document.getElementById("loading-icon").src = "/user/2factor/qrcode";
-
-  } else {
-    qrcodeDiv.style.display = "none";
+    if (checkbox.checked) {
+      qrcodeDiv.classList.remove("hidden");
+      document.getElementById("loading-icon").src = "/user/2factor/qrcode";
+    } else {
+      qrcodeDiv.classList.add("hidden");
+    }
   }
-
-}
 </script>

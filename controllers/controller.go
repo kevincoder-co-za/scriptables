@@ -19,11 +19,12 @@ import (
 	"net/http"
 	"os"
 
+	"kevincodercoza/scriptable/models"
+	"kevincodercoza/scriptable/utils"
+
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/noirbizarre/gonja"
-	"kevincodercoza/scriptable/models"
-	"kevincodercoza/scriptable/utils"
 )
 
 type Controller struct {
@@ -136,7 +137,6 @@ func (c *Controller) GetSessionValue(key string, e echo.Context) (interface{}, e
 		return nil, err
 	}
 
-	fmt.Println(sess.Values)
 	value, ok := sess.Values[key]
 	if ok {
 		return value, nil
@@ -155,9 +155,7 @@ func (c *Controller) SetSessionValues(values map[string]interface{}, e echo.Cont
 		sess.Values[k] = v
 	}
 
-	sess.Save(e.Request(), e.Response())
 	if err := sess.Save(e.Request(), e.Response()); err != nil {
-		fmt.Println(err)
 		return false, err
 	}
 
@@ -172,7 +170,6 @@ func (c *Controller) DestroySession(e echo.Context) (bool, error) {
 
 	sess.Values = nil
 
-	sess.Save(e.Request(), e.Response())
 	if err := sess.Save(e.Request(), e.Response()); err != nil {
 		return false, err
 	}

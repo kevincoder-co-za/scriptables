@@ -2,11 +2,13 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 	"time"
 
 	"github.com/gorilla/sessions"
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -42,6 +44,13 @@ func main() {
 		return
 	}
 
+	if _, err := os.Stat(".env"); err == nil {
+		err := godotenv.Load()
+		if err != nil {
+			log.Fatal("You have an .env config but something went wrong while parsing it. Error: ", err.Error())
+		}
+	}
+
 	time.Local = location
 
 	go func() {
@@ -73,10 +82,16 @@ func main() {
 		CookieHTTPOnly: true,
 	})
 
-	router.Use(session.Middleware(sessions.NewCookieStore([]byte(os.Getenv("SESSION_KEY")))))
+	store := sessions.NewCookieStore([]byte(os.Getenv("SESSION_KEY")))
+	store.Options = &sessions.Options{
+		Path:     "/",
+		MaxAge:   86400 * 7, // 7 days
+		HttpOnly: true,
+		Secure:   false, // Set to false for local development (HTTP)
+	}
+	router.Use(session.Middleware(store))
 
 	controller := controllers.Controller{}
-	router.GET("/trial-expired", controllers.AuthMiddleware(controller.TrialExpired))
 	router.GET("/users/logout", controller.Logout)
 	router.GET("/users/login", controller.LoginView)
 	router.POST("/users/authenticate", controller.CheckLogin)
@@ -144,5 +159,4 @@ func main() {
 	router.GET("/webhooks/deploy/:sid/:token", controllers.AuthMiddleware(controller.DeployWebhookSite))
 
 	router.Start(os.Getenv("SCRIPTABLES_SERVER_DSN_HOST") + ":" + os.Getenv("SCRIPTABLES_SERVER_DSN_PORT"))
-
 }

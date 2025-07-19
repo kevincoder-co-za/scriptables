@@ -193,31 +193,26 @@
       function handleCronExpressionInput() {
           const cronExpressionInput = document.getElementById('cron-expression').value.trim();
 
-          // Check if the user entered a cron constant or a specific cron expression
           if (cronExpressionInput.startsWith('@')) {
               handleCronConstant(cronExpressionInput);
-              return; // Skip further processing since the input is a constant
+              return;
           }
 
-          // The user entered a specific cron expression
           populateFieldsFromCronExpression(cronExpressionInput);
           updateCronExpression();
       }
 
-      // Function to check if the cron expression is a constant
       function cronIsConstant(minute, hour, day, month, dayOfWeek) {
           return (minute.startsWith('@') || hour.startsWith('@') || day.startsWith('@') || month.startsWith('@') ||
               dayOfWeek.startsWith('@'));
       }
 
-      // Function to handle cron constants
       function handleCronConstant(cronExpressionInput) {
           const cronConstants = {
               '@hourly': '0 * * * *',
               '@daily': '0 0 * * *',
               '@weekly': '0 0 * * 0',
               '@monthly': '0 0 1 * *'
-              // Add more constants as needed
           };
 
           const cronExpression = cronConstants[cronExpressionInput];
@@ -227,7 +222,6 @@
           }
       }
 
-      // Function to populate fields from a cron expression
       function populateFieldsFromCronExpression(cronExpression) {
           const fields = cronExpression.split(' ');
           document.getElementById('minute').value = fields[0];
@@ -237,16 +231,13 @@
           document.getElementById('dayOfWeek').value = fields[4];
       }
 
-      // Attach event listeners to input fields to update cron expression
       const inputFields = document.querySelectorAll('input.form-control.timeinput');
       inputFields.forEach((input) => {
           input.addEventListener('input', updateCronExpression);
       });
 
-      // Attach event listener to "cron-expression" input field
       document.getElementById('cron-expression').addEventListener('input', handleCronExpressionInput);
 
-      // Initial update
       populateFieldsFromCronExpression('{{cron_expression}}')
       updateCronExpression();
   </script>
