@@ -1,8 +1,14 @@
 module plexcorp.tech/scriptable
 
+<<<<<<< HEAD
 go 1.21
 
 toolchain go1.21.1
+=======
+go 1.23.0
+
+toolchain go1.24.0
+>>>>>>> origin/main
 
 require (
 	github.com/google/uuid v1.3.1
@@ -15,7 +21,11 @@ require (
 	github.com/pkg/sftp v1.13.5
 	github.com/pquerna/otp v1.4.0
 	github.com/robfig/cron v1.2.0
+<<<<<<< HEAD
 	golang.org/x/crypto v0.22.0
+=======
+	golang.org/x/crypto v0.35.0
+>>>>>>> origin/main
 	gorm.io/driver/mysql v1.5.1
 	gorm.io/gorm v1.25.1
 )
@@ -36,6 +46,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sirupsen/logrus v1.3.0 // indirect
+<<<<<<< HEAD
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	golang.org/x/net v0.24.0 // indirect
@@ -43,4 +54,15 @@ require (
 	golang.org/x/term v0.19.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
+=======
+	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
+	github.com/ugorji/go/codec v1.2.11 // indirect
+	golang.org/x/arch v0.3.0 // indirect
+	golang.org/x/net v0.36.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/term v0.29.0 // indirect
+	golang.org/x/text v0.22.0 // indirect
+	google.golang.org/protobuf v1.33.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
+>>>>>>> origin/main
 )

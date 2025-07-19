@@ -1,4 +1,6 @@
+#!/bin/bash
+
 cd ../
 go mod tidy
-env GOOS=linux GOARCH=arm64 go build -o build/server_arm
-env go build -o build/server_linux
+CGO_ENABLED=0 GOOS=linux GOARCH=arm64 GIN_MODE=release go build -o build/server_arm
+CGO_ENABLED=0 GIN_MODE=release go build -o build/server_linux

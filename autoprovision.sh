@@ -1,19 +1,15 @@
-#!/bin/bash
+#!/bin/sh
 
 if [ ! -d "./scriptables" ]; then
   git clone https://github.com/plexcorp-pty-ltd/scriptables.git scriptables
   cd scriptables
 fi
 
-
 if ! command -v docker >/dev/null; then
-    echo "Failed to execute docker. Please install docker first before attempting to run this script. Lear more here: https://docs.docker.com/engine/install/ubuntu/"
-    exit 0
-fi
-
-if ! command -v docker-compose >/dev/null; then
-    echo "Failed to execute docker-compose. Please install docker-compose first before attempting to run this script. Lear more here: https://docs.docker.com/compose/install/linux/"
-    exit 0
+  curl -fsSL https://get.docker.com -o get-docker.sh
+  sh get-docker.sh
+  rm get-docker.sh
+  usermod -aG docker "$USER"
 fi
 
 
@@ -46,6 +42,6 @@ VERBOSE_LOG=yes
 GIN_MODE=release
 " > .env
 
-docker-compose -f docker-compose.yml up -d --build
+docker compose -f docker-compose.yml up -d --build
 
 echo "Install complete. Please visit: http://127.0.0.1:3012/users/register"
