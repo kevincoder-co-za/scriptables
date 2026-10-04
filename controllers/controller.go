@@ -157,7 +157,7 @@ func (c *Controller) SetAndGetCSRFToken(gctx *gin.Context) string {
 	}
 
 	if setToken {
-		token := fmt.Sprintf("%s|%d", uuid.New().String(), time.Now().Unix())
+		token = fmt.Sprintf("%s|%d", uuid.New().String(), time.Now().Unix())
 		session.Set("csrfToken", token)
 		session.Save()
 	}

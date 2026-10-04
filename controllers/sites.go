@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -12,99 +13,88 @@ import (
 	"github.com/noirbizarre/gonja"
 	"plexcorp.tech/scriptable/console"
 	"plexcorp.tech/scriptable/models"
-	"plexcorp.tech/scriptable/sshclient"
 	"plexcorp.tech/scriptable/utils"
 )
 
-func (c *Controller) CreateSite(gctx *gin.Context) {
-	var countServers int64
-	sessUser := c.GetSessionUser(gctx)
+var domainPattern = regexp.MustCompile(`^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$`)
+var gitUrlPattern = regexp.MustCompile(`^[\w.@:/~-]+$`)
+var gitBranchPattern = regexp.MustCompile(`^[\w./-]+$`)
+var webrootPattern = regexp.MustCompile(`^[\w./-]+$`)
+var phpVersionPattern = regexp.MustCompile(`^\d\.\d$`)
+var environmentPattern = regexp.MustCompile(`^[\w.-]+$`)
 
-	c.GetDB(gctx).Table("servers").Where("status=? AND team_id=?", models.STATUS_COMPLETE, sessUser.TeamId).Count(&countServers)
-	if countServers == 0 {
+func findMissingSitePrerequisites() []string {
+	missing := []string{}
+
+	if !models.IsPackageInstalled("nginx") {
+		missing = append(missing, "Nginx")
+	}
+
+	if !models.IsPackageInstalled("mysql-server") && !models.IsPackageInstalled("mariadb-server") {
+		missing = append(missing, "MySQL or MariaDB")
+	}
+
+	return missing
+}
+
+func (c *Controller) CreateSite(gctx *gin.Context) {
+	if missing := findMissingSitePrerequisites(); len(missing) > 0 {
 		c.Render("general/warning", gonja.Context{
-			"title":      "No active servers found",
-			"warningMsg": "Please setup a server <a href=\"/\"> here</a> first before trying to deploy a site. If you have already done so - please wait for the server build to finish first.",
+			"title":      "Missing applications",
+			"highlight":  "sites",
+			"warningMsg": "Please install " + strings.Join(missing, " and ") + " from the <a href=\"/applications\">applications</a> page before setting up a site.",
 		}, gctx)
 
 		return
 	}
-	servers := []models.Server{}
-	c.GetDB(gctx).Where("team_id=?", sessUser.TeamId).Find(&servers)
 
 	password := utils.GenPassword()
 	c.Render("sites/create", gonja.Context{
 		"title":                   "Setup website",
-		"server_id":               0,
 		"domain":                  "",
 		"webroot":                 "public",
 		"php_version":             "",
 		"letsencrypt_certificate": 0,
 		"git_url":                 "",
 		"scriptables":             "laravel",
-		"deploy_scriptables":      "laraveldeploy",
 		"mysql_password":          password,
 		"mysql_password_confirm":  password,
-		"servers":                 servers,
 		"environment":             "prod",
 		"branch":                  "master",
 		"highlight":               "sites",
 	}, gctx)
+}
 
+func normalizeDomain(domain string) string {
+	domain = strings.ToLower(strings.TrimSpace(domain))
+	for _, unwanted := range []string{"https://", "http://", "://", "/"} {
+		domain = strings.ReplaceAll(domain, unwanted, "")
+	}
+
+	return domain
 }
 
 func (c *Controller) SaveSite(gctx *gin.Context) {
-	domain := gctx.PostForm("domain")
-	serverId, serr := strconv.ParseInt(gctx.PostForm("server_id"), 10, 64)
+	domain := normalizeDomain(gctx.PostForm("domain"))
 	webroot := gctx.PostForm("webroot")
-	giturl := gctx.PostForm("git_url")
-	PhpVersion := gctx.PostForm("php_version")
+	giturl := strings.TrimSpace(gctx.PostForm("git_url"))
+	phpVersion := gctx.PostForm("php_version")
 	scriptables := gctx.PostForm("scriptables")
-	MysqlPassword := gctx.PostForm("mysql_password")
-	MysqlPasswordConfirm := gctx.PostForm("mysql_password_confirm")
+	mysqlPassword := gctx.PostForm("mysql_password")
+	mysqlPasswordConfirm := gctx.PostForm("mysql_password_confirm")
 	environment := gctx.PostForm("environment")
 	branch := gctx.PostForm("branch")
 
-	LetsEncryptCertificate := 0
-	servers := []models.Server{}
-	c.GetDB(gctx).Find(&servers)
-
-	if gctx.PostForm("letsencrypt_certificate") != "" && gctx.PostForm("letsencrypt_certificate") == "on" {
-		LetsEncryptCertificate = 1
+	letsEncryptCertificate := 0
+	if gctx.PostForm("letsencrypt_certificate") == "on" {
+		letsEncryptCertificate = 1
 	}
 
-	var unwantedUrlsParts = []string{"https://", "http://", "://", "/"}
-	for _, un := range unwantedUrlsParts {
-		domain = strings.ReplaceAll(domain, un, "")
-	}
-
-	var siteName = ""
-	if domain != "" {
-		siteName = strings.ReplaceAll(domain, ".", "")
-	}
-
-	ctx := gonja.Context{
-		"title":                   "Setup a website",
-		"domain":                  domain,
-		"server_id":               serverId,
-		"webroot":                 webroot,
-		"php_version":             PhpVersion,
-		"letsencrypt_certificate": LetsEncryptCertificate,
-		"git_url":                 giturl,
-		"servers":                 servers,
-		"site_name":               siteName,
-		"mysql_password":          MysqlPassword,
-		"mysql_password_confirm":  MysqlPasswordConfirm,
-		"highlight":               "sites",
-	}
-
-	errors := []string{}
+	siteName := strings.ReplaceAll(domain, ".", "")
 
 	if scriptables == "" {
 		scriptables = "laravel"
 	}
-
-	deploy_scriptables := scriptables + "_deploy"
 
 	if environment == "" {
 		environment = "prod"
@@ -114,91 +104,104 @@ func (c *Controller) SaveSite(gctx *gin.Context) {
 		branch = "master"
 	}
 
-	ctx["branch"] = branch
-	ctx["scriptables"] = scriptables
-	ctx["deploy_scriptables"] = deploy_scriptables
-	ctx["environment"] = environment
-
-	if siteName == "" {
-		errors = append(errors, "Domain seems invalid. Please check the domain uses this format: domain.com|.ext or www.domain.ext or subdomain.domain.ext")
+	ctx := gonja.Context{
+		"title":                   "Setup a website",
+		"domain":                  domain,
+		"webroot":                 webroot,
+		"php_version":             phpVersion,
+		"letsencrypt_certificate": letsEncryptCertificate,
+		"git_url":                 giturl,
+		"site_name":               siteName,
+		"mysql_password":          mysqlPassword,
+		"mysql_password_confirm":  mysqlPasswordConfirm,
+		"branch":                  branch,
+		"scriptables":             scriptables,
+		"environment":             environment,
+		"highlight":               "sites",
 	}
 
-	if MysqlPassword != "" && MysqlPassword != MysqlPasswordConfirm {
+	errors := []string{}
+
+	if !domainPattern.MatchString(domain) || utils.Slugify(siteName) == "" {
+		errors = append(errors, "Domain seems invalid. Please check the domain uses this format: domain.ext or www.domain.ext or subdomain.domain.ext")
+	}
+
+	if mysqlPassword != mysqlPasswordConfirm {
 		errors = append(errors, "Mysql password and confirm password not the same.")
 	}
 
-	if giturl == "" {
-		errors = append(errors, "Please enter a valid GIT URL.")
+	if strings.ContainsAny(mysqlPassword, "'\\\r\n") {
+		errors = append(errors, "Mysql password cannot contain quotes, backslashes or line breaks.")
 	}
 
 	if strings.Contains(giturl, "https://") {
 		errors = append(errors, "Please use only the SSH GIT URL. e.g.: git@github.com:username/app.git")
+	} else if !gitUrlPattern.MatchString(giturl) {
+		errors = append(errors, "Please enter a valid GIT URL.")
 	}
 
-	if serverId == 0 || serr != nil {
-		errors = append(errors, "Please select a server to deploy this application to.")
+	if !gitBranchPattern.MatchString(branch) {
+		errors = append(errors, "Please enter a valid GIT branch.")
 	}
 
-	if domain == "" {
-		errors = append(errors, "Please enter a valid domain name.")
+	if !webrootPattern.MatchString(webroot) || strings.Contains(webroot, "..") {
+		errors = append(errors, "Please enter the path to your websites web root folder, relative to the project root.")
 	}
 
-	if webroot == "" {
-		errors = append(errors, "Please enter the full path to your websites web root folder.")
-	}
-
-	if PhpVersion == "" {
+	if !phpVersionPattern.MatchString(phpVersion) {
 		errors = append(errors, "Please select a version of PHP to configure with this app.")
 	}
 
+	if !environmentPattern.MatchString(environment) {
+		errors = append(errors, "Please enter a valid config file name e.g. prod.env")
+	}
+
+	if len(utils.FindScriptables(scriptables)) == 0 || strings.ContainsAny(scriptables, "./") {
+		errors = append(errors, "Sorry, that site type is not supported.")
+	}
+
+	if letsEncryptCertificate == 1 && !models.IsPackageInstalled("certbot") {
+		errors = append(errors, "Please install Certbot from the applications page before requesting a Let's Encrypt certificate.")
+	}
+
 	var found int64
-	c.GetDB(gctx).Where("domain=?", domain, siteName).Count(&found)
+	c.GetDB(gctx).Model(&models.Site{}).Where("domain = ? OR site_name = ?", domain, siteName).Count(&found)
 
 	if found > 0 {
 		errors = append(errors, "Sorry, domain already in use. You can have multiple subdomains but only one root domain.")
 	}
 
-	if len(errors) == 0 {
-		token := uuid.New()
-		sessUser := c.GetSessionUser(gctx)
-		site := models.Site{
-			Domain:                 domain,
-			SiteName:               siteName,
-			ServerID:               serverId,
-			PhpVersion:             PhpVersion,
-			Webroot:                webroot,
-			LetsEncryptCertificate: LetsEncryptCertificate,
-			Status:                 models.STATUS_CONNECTING,
-			ScriptableName:         scriptables,
-			DeployScriptables:      deploy_scriptables,
-			GitURL:                 giturl,
-			MysqlPassword:          utils.Encrypt(MysqlPassword),
-			CreatedAt:              time.Now(),
-			UpdatedAt:              time.Now(),
-			Environment:            environment,
-			Branch:                 branch,
-			DeployToken:            strings.ReplaceAll(token.String(), "-", ""),
-			TeamId:                 sessUser.TeamId,
-		}
-		err := c.GetDB(gctx).Create(&site)
-
-		if err != nil && utils.LogVerbose() {
-			fmt.Println(err)
-		}
-
-		gctx.Redirect(http.StatusFound, "/site/deployKey/"+strconv.Itoa(int(site.ID)))
-		return
-
-	} else {
+	if len(errors) > 0 {
 		ctx["errors"] = errors
+		c.Render("sites/create", ctx, gctx)
+		return
 	}
 
-	c.Render("sites/create", ctx, gctx)
+	sessUser := c.GetSessionUser(gctx)
+	site := models.Site{
+		Domain:                 domain,
+		SiteName:               siteName,
+		PhpVersion:             phpVersion,
+		Webroot:                webroot,
+		LetsEncryptCertificate: letsEncryptCertificate,
+		Status:                 models.STATUS_CONNECTING,
+		ScriptableName:         scriptables,
+		DeployScriptables:      scriptables + "_deploy",
+		GitURL:                 giturl,
+		MysqlPassword:          utils.Encrypt(mysqlPassword),
+		CreatedAt:              time.Now(),
+		UpdatedAt:              time.Now(),
+		Environment:            environment,
+		Branch:                 branch,
+		DeployToken:            strings.ReplaceAll(uuid.New().String(), "-", ""),
+		TeamId:                 sessUser.TeamId,
+	}
+	c.GetDB(gctx).Create(&site)
 
+	gctx.Redirect(http.StatusFound, "/site/deployKey/"+strconv.Itoa(int(site.ID)))
 }
 
 func (c *Controller) Sites(gctx *gin.Context) {
-
 	view := gctx.Query("view")
 	status := gctx.Query("status")
 	sessUser := c.GetSessionUser(gctx)
@@ -222,37 +225,36 @@ func (c *Controller) Sites(gctx *gin.Context) {
 
 	search := gctx.Query("search")
 	sites := models.GetSitesList(c.GetDB(gctx), page, perPage, search, status, sessUser.TeamId)
-	searchQuery := ""
 
-	if search != "" {
-		searchQuery = "&search=" + searchQuery
+	c.Render("sites/list", gonja.Context{
+		"title":     "Sites",
+		"sites":     sites,
+		"nextPage":  page + 1,
+		"prevPage":  page - 1,
+		"search":    search,
+		"view":      view,
+		"status":    status,
+		"numSites":  len(sites),
+		"highlight": "sites",
+	}, gctx)
+}
+
+func (c *Controller) findSessionTeamSite(gctx *gin.Context, id string) *models.Site {
+	siteId, _ := strconv.ParseInt(id, 10, 64)
+	sessUser := c.GetSessionUser(gctx)
+
+	site := &models.Site{}
+	if siteId != 0 {
+		c.GetDB(gctx).Where("id = ? AND team_id = ?", siteId, sessUser.TeamId).Limit(1).Find(site)
 	}
 
-	vars := gonja.Context{
-		"title":       "Sites",
-		"sites":       sites,
-		"nextPage":    page + 1,
-		"prevPage":    page - 1,
-		"searchQuery": searchQuery,
-		"search":      search,
-		"view":        view,
-		"status":      status,
-		"numSites":    len(sites),
-		"addBtn":      "<a href=\"/site/create\" class=\"btn-sm btn-success\" style=\"vertical-align:middle;\">ADD Site</a>",
-		"highlight":   "sites",
-	}
-
-	c.Render("sites/list", vars, gctx)
-
+	return site
 }
 
 func (c *Controller) CreateSiteDeployKey(gctx *gin.Context) {
-	siteId := gctx.Param("id")
-	var site models.Site
-	sessUser := c.GetSessionUser(gctx)
+	site := c.findSessionTeamSite(gctx, gctx.Param("id"))
 
-	c.GetDB(gctx).Where("id=? and team_id=?", siteId, sessUser.TeamId).First(&site)
-	if site.ID == 0 || site.TeamId != sessUser.TeamId {
+	if site.ID == 0 {
 		c.FlashError(gctx, "Ooops, sorry seems like you do not have permission to access this site. Please try again.")
 		gctx.Redirect(http.StatusFound, "/sites")
 		return
@@ -265,139 +267,88 @@ func (c *Controller) CreateSiteDeployKey(gctx *gin.Context) {
 		"highlight":  "sites",
 		"successMsg": "Successfully saved site: " + site.SiteName + ". Now generating deploy key..., once done please copy and add to your repos deploy keys.",
 	}, gctx)
-
 }
 
 func (c *Controller) GenerateDeployKey(gctx *gin.Context) {
-	siteId, e := strconv.ParseInt(gctx.PostForm("siteId"), 10, 64)
-	sessUser := c.GetSessionUser(gctx)
+	site := c.findSessionTeamSite(gctx, gctx.PostForm("siteId"))
 	db := c.GetDB(gctx)
 
 	fail := func(reason string) {
 		c.RenderWithoutLayout("sites/_deploykey", gonja.Context{
-			"siteId":   siteId,
+			"siteId":   site.ID,
 			"errorMsg": reason,
 		}, gctx)
 	}
 
-	if siteId == 0 || e != nil {
-		fail("No site was specified.")
-		return
-	}
-
-	var site models.Site
-	db.Where("id=? and team_id = ?", siteId, sessUser.TeamId).First(&site)
-
-	if site.ID == 0 || site.TeamId != sessUser.TeamId {
+	if site.ID == 0 {
 		fail("You do not have permission to access this site.")
 		return
 	}
 
-	server := models.GetServer(db, site.ServerID, site.TeamId)
-	username := utils.Slugify(site.SiteName)
-	keyPath := models.GetSiteDeployPubKeyPath(siteId, site.SiteName, username)
-
-	cmd, err := utils.GetSharedScriptable("deploy_keysetup")
+	script, err := utils.ReadSharedScriptable("deploy_keysetup")
 	if err != nil {
 		fail("Could not find the deploy key setup script. Check that scriptables/__shared/deploy_keysetup.sh exists.")
 		return
 	}
 
-	cmd = site.SubScriptableSiteVarsOnly(cmd)
+	keyPath := models.GetSiteDeployKeyPath(site.ID, site.SiteName, utils.Slugify(site.SiteName))
 
-	client, err := models.GetSSHClient(&server, false)
-	if client == nil || err != nil {
-		fail("Failed to connect to " + server.ServerName + " over SSH. Please try again.")
-		return
-	}
-
-	summary := "Create deploy key:" + site.SiteName + " for server: " + server.ServerName
-	err, output := models.RunScriptable(db, "site", site.ID, client, cmd, summary, false, sessUser.TeamId)
-
-	if utils.LogVerbose() {
-		fmt.Println(err, output)
-	}
-
+	output, err := utils.RunScript(site.ReplaceScriptableVariables(db, script))
 	if err != nil {
-		fail("Failed to create the SSH key " + keyPath + " on " + server.ServerName + ".")
+		models.LogError(db, site.ID, "site", err.Error()+". Command output: "+output,
+			"Failed to create deploy key: "+site.SiteName, site.TeamId)
+		fail("Failed to create the SSH key " + keyPath + ".")
 		return
 	}
 
-	pubKey, err := sshclient.ReadFileWithSudo(client, keyPath+".pub")
-	publicKey := strings.TrimSpace(string(pubKey))
+	publicKey, err := utils.RunCommandAsRoot("cat", keyPath+".pub")
+	publicKey = strings.TrimSpace(publicKey)
 
 	if err != nil || publicKey == "" {
-		fail("Created the key but could not read " + keyPath + ".pub back from " + server.ServerName + ".")
+		fail("Created the key but could not read " + keyPath + ".pub.")
 		return
 	}
 
 	c.RenderWithoutLayout("sites/_deploykey", gonja.Context{
-		"siteId":      siteId,
+		"siteId":      site.ID,
 		"publicKey":   publicKey,
 		"_csrf_token": c.SetAndGetCSRFToken(gctx),
 	}, gctx)
 }
 
 func (c *Controller) DeployBranch(gctx *gin.Context) {
+	site := c.findSessionTeamSite(gctx, gctx.PostForm("siteId"))
 
-	siteId, e := strconv.ParseInt(gctx.PostForm("siteId"), 10, 64)
-	sessUser := c.GetSessionUser(gctx)
-
-	if siteId == 0 || e != nil {
+	if site.ID == 0 {
 		c.FlashError(gctx, "Site ID is required")
 		gctx.Redirect(http.StatusFound, "/sites")
 		return
 	}
 
-	var site *models.Site
-	db := c.GetDB(gctx)
-
-	db.Where("id=? and team_id=?", siteId, sessUser.TeamId).First(&site)
-	server := models.GetServer(db, site.ServerID, sessUser.TeamId)
-
-	scripts := utils.GetScriptables(site.DeployScriptables)
-	go console.RunSiteBuild(db, site, &server, scripts, false, nil)
+	go console.RunSiteScriptables(c.GetDB(gctx), site, utils.FindScriptables(site.DeployScriptables))
 
 	c.FlashSuccess(gctx, "Success! deploy will begin shortly...")
 	gctx.Redirect(http.StatusFound, fmt.Sprintf("/logs/site/%d", site.ID))
 }
 
-func (c *Controller) ConfirmSiteDeploy(gctx *gin.Context) {
+func (c *Controller) queueSiteBuild(gctx *gin.Context, successMsg string) {
+	site := c.findSessionTeamSite(gctx, gctx.PostForm("siteId"))
 
-	siteId, e := strconv.ParseInt(gctx.PostForm("siteId"), 10, 64)
-	sessUser := c.GetSessionUser(gctx)
-
-	if siteId == 0 || e != nil {
-		c.FlashError(gctx, "Site ID is required")
+	if site.ID == 0 {
+		c.FlashError(gctx, "Site ID is invalid or an unknown error has occurred. Please try again.")
 		gctx.Redirect(http.StatusFound, "/sites")
 		return
 	}
 
-	db := c.GetDB(gctx)
+	models.SetSiteStatus(c.GetDB(gctx), site.ID, models.STATUS_QUEUED)
+	c.FlashSuccess(gctx, successMsg)
+	gctx.Redirect(http.StatusFound, fmt.Sprintf("/logs/site/%d", site.ID))
+}
 
-	db.Exec("UPDATE sites SET status = ? WHERE id = ? and team_id=?", models.STATUS_QUEUED, siteId, sessUser.TeamId)
-	c.FlashSuccess(gctx, "Success! deploy will begin shortly...")
-	gctx.Redirect(http.StatusFound, fmt.Sprintf("/logs/site/%d", siteId))
+func (c *Controller) ConfirmSiteDeploy(gctx *gin.Context) {
+	c.queueSiteBuild(gctx, "Success! deploy will begin shortly...")
 }
 
 func (c *Controller) RetrySiteBuild(gctx *gin.Context) {
-	siteId, e := strconv.ParseInt(gctx.PostForm("siteId"), 10, 64)
-	sessUser := c.GetSessionUser(gctx)
-
-	if siteId == 0 || e != nil {
-		c.FlashError(gctx, "Site ID is required")
-		gctx.Redirect(http.StatusFound, "/sites")
-		return
-	}
-
-	r := c.GetDB(gctx).Exec("Update sites set status=? WHERE id = ? and team_id=?",
-		models.STATUS_QUEUED, siteId, sessUser.TeamId)
-	if r.RowsAffected > 0 {
-		c.FlashSuccess(gctx, "Successfully queued site for re-deploy. Please check the logs for more information.")
-		gctx.Redirect(http.StatusFound, fmt.Sprintf("/logs/site/%d", siteId))
-		return
-	}
-
-	c.FlashError(gctx, "Site ID is is invalid or an unknown error as occurred. Pleasy try again.")
-	gctx.Redirect(http.StatusFound, "/sites")
+	c.queueSiteBuild(gctx, "Successfully queued site for re-deploy. Please check the logs for more information.")
 }

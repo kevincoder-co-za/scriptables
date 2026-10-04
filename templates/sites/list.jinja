@@ -47,7 +47,7 @@
     </div>
     <p class="empty-title">No sites found</p>
     <p class="empty-subtitle text-secondary">
-      Deploy your first site to one of your servers.
+      Deploy your first site to this machine.
     </p>
     <div class="empty-action">
       <a href="/site/create" class="btn btn-primary">
@@ -66,7 +66,6 @@
         <tr>
           <th>Site name</th>
           <th>Domain</th>
-          <th>Server</th>
           <th>Git URL</th>
           <th>Branch</th>
           <th>Environment</th>
@@ -80,7 +79,6 @@
         <tr>
           <td>{{s.SiteName}}</td>
           <td class="text-secondary">{{s.Domain}}</td>
-          <td class="text-secondary">{{s.ServerName}}</td>
           <td class="text-secondary font-monospace">{{s.GitURL}}</td>
           <td class="text-secondary">{{s.Branch}}</td>
           <td class="text-secondary">{{s.Environment}}</td>
@@ -109,7 +107,7 @@
               </a>
 
               {% if s.Status == STATUS_FAILED %}
-              <form method="post" action="/site/retrybuild/">
+              <form method="post" action="/site/retrybuild">
                 <input type="hidden" name="_csrf_token" value="{{_csrf_token}}" />
                 <input type="hidden" name="siteId" value="{{s.ID}}" />
                 <button type="submit" class="btn btn-icon btn-sm" title="Retry deploy" data-bs-toggle="tooltip">
@@ -126,10 +124,6 @@
                   <i class="ti ti-rocket"></i>
                 </button>
               </form>
-              <a href="/systemd/services/{{s.ID}}/list" class="btn btn-icon btn-sm" title="Queue workers"
-                data-bs-toggle="tooltip">
-                <i class="ti ti-player-play"></i>
-              </a>
               {% endif %}
             </div>
           </td>
@@ -150,7 +144,7 @@
         <div class="d-flex align-items-start">
           <div class="flex-fill">
             <h3 class="card-title mb-1">{{s.SiteName}}</h3>
-            <div class="text-secondary small">{{s.Domain}} &middot; {{s.ServerName}}</div>
+            <div class="text-secondary small">{{s.Domain}}</div>
             <div class="mt-2">
               {% if s.Status == STATUS_QUEUED %}
               <span class="badge bg-secondary-lt">Deploy queued</span>
@@ -186,7 +180,7 @@
           </a>
 
           {% if s.Status == STATUS_FAILED %}
-          <form method="post" action="/site/retrybuild/">
+          <form method="post" action="/site/retrybuild">
             <input type="hidden" name="_csrf_token" value="{{_csrf_token}}" />
             <input type="hidden" name="siteId" value="{{s.ID}}" />
             <button type="submit" class="btn btn-sm">
@@ -203,9 +197,6 @@
               <i class="ti ti-rocket me-1"></i>Deploy
             </button>
           </form>
-          <a href="/systemd/services/{{s.ID}}/list" class="btn btn-sm">
-            <i class="ti ti-player-play me-1"></i>Workers
-          </a>
           {% endif %}
         </div>
       </div>

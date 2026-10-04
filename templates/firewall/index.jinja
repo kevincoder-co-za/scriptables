@@ -1,0 +1,94 @@
+<div class="page-header d-print-none mb-3">
+  <div class="row g-2 align-items-center">
+    <div class="col">
+      <h2 class="page-title">Firewall rules</h2>
+    </div>
+    <div class="col-auto ms-auto d-print-none">
+      <a href="/logs/firewall/0" class="btn">
+        <i class="ti ti-terminal-2 me-2"></i>Log
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-header">
+    <h3 class="card-title">Add a rule</h3>
+  </div>
+
+  {# Posting the individual fields lets the server compose the ufw command. #}
+  <form hx-post="/firewall/rule/add" hx-target="#firewall-rules" hx-swap="innerHTML"
+    hx-indicator="#firewall-loading" hx-disabled-elt="find button[type=submit]">
+    <input type="hidden" name="_csrf_token" value="{{ _csrf_token }}" />
+
+    <div class="card-body">
+      <div class="row g-2">
+        <div class="col-md-2">
+          <label class="form-label">Action</label>
+          <select class="form-select" required name="allow_block">
+            <option value="">Choose&hellip;</option>
+            <option value="allow">Allow</option>
+            <option value="deny">Deny</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Protocol</label>
+          <select class="form-select" required name="protocol">
+            <option value="">Choose&hellip;</option>
+            <option value="tcp">TCP</option>
+            <option value="udp">UDP</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">IP address</label>
+          <input name="ip" type="text" class="form-control" required placeholder="192.168.1.1 or Anywhere">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Direction</label>
+          <select class="form-select" required name="direction">
+            <option value="">Choose&hellip;</option>
+            <option value="outgoing">Out from this machine</option>
+            <option value="incoming">In to this machine</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Port</label>
+          <input type="text" name="port" class="form-control" placeholder="9022 or any" required>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-footer text-end">
+      <button type="submit" class="btn btn-primary">
+        <i class="ti ti-plus me-2"></i>Add rule
+      </button>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex align-items-center">
+    <h3 class="card-title">Active rules</h3>
+    <div class="ms-auto">
+      <button class="btn btn-sm" hx-get="/firewall/rules" hx-target="#firewall-rules"
+        hx-swap="innerHTML" hx-indicator="#firewall-loading">
+        <i class="ti ti-refresh me-1"></i>Refresh
+      </button>
+    </div>
+  </div>
+
+  {# htmx toggles .htmx-request on this element for the duration of any request. #}
+  <div id="firewall-loading" class="htmx-indicator">
+    <div class="progress progress-sm mb-0">
+      <div class="progress-bar progress-bar-indeterminate"></div>
+    </div>
+  </div>
+
+  {# Loads once on page load, then re-rendered by every add/delete. #}
+  <div id="firewall-rules" hx-get="/firewall/rules" hx-trigger="load"
+    hx-indicator="#firewall-loading">
+    <div class="card-body text-secondary text-center">
+      Fetching rules&hellip;
+    </div>
+  </div>
+</div>

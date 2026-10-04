@@ -1,13 +1,8 @@
 #!/bin/bash
 # exit-on-failure=yes
+set -e
 
-if ! command -v snap &> /dev/null; then
-    sudo apt-get update -y
-    sudo apt-get install snapd -y
-fi
+sudo apt-get update -y
+sudo apt-get install -y certbot python3-certbot-nginx
 
-sudo snap install --classic certbot
-sudo ln -s /snap/bin/certbot /usr/bin/certbot
-
-sudo bash -c 'echo "30 4,16 * * * root /usr/bin/certbot renew --quiet" > /etc/cron.d/certbot-renew'
-sudo service cron restart
+sudo systemctl enable --now certbot.timer

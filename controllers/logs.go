@@ -6,15 +6,85 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/noirbizarre/gonja"
+	"gorm.io/gorm"
 	"plexcorp.tech/scriptable/models"
 	"plexcorp.tech/scriptable/utils"
 )
 
-func (c *Controller) ServerLogs(gctx *gin.Context) {
-	serverId, _ := strconv.ParseInt(gctx.Param("id"), 10, 64)
-	page, err := strconv.Atoi(gctx.Query("page"))
-	sessUser := c.GetSessionUser(gctx)
+type loggedEntity struct {
+	Title      string
+	Section    string
+	Highlight  string
+	InProgress bool
+}
 
+func isInProgress(status string) bool {
+	return status == models.STATUS_QUEUED || status == models.STATUS_RUNNING
+}
+
+func describeLoggedEntity(db *gorm.DB, entity string, id int64, teamId int64) (loggedEntity, bool) {
+	switch entity {
+	case "application":
+		var application models.Application
+		db.Where("id = ? AND team_id = ?", id, teamId).Limit(1).Find(&application)
+		catalogApplication, found := models.FindCatalogApplication(application.Slug)
+		return loggedEntity{
+			Title:      "Install logs for " + catalogApplication.Name,
+			Section:    "Applications",
+			Highlight:  "applications",
+			InProgress: isInProgress(application.Status),
+		}, found
+
+	case "site":
+		var site models.Site
+		db.Where("id = ? AND team_id = ?", id, teamId).Limit(1).Find(&site)
+		return loggedEntity{
+			Title:      "Site logs for " + site.SiteName,
+			Section:    "Sites",
+			Highlight:  "sites",
+			InProgress: isInProgress(site.Status),
+		}, site.ID != 0
+
+	case "cron":
+		var cron models.Cron
+		db.Unscoped().Where("id = ? AND team_id = ?", id, teamId).Limit(1).Find(&cron)
+		return loggedEntity{
+			Title:      "Cron logs for " + cron.CronName,
+			Section:    "Crons",
+			Highlight:  "crons",
+			InProgress: isInProgress(cron.Status),
+		}, cron.ID != 0
+
+	case models.SECURITY_LOG_ENTITY:
+		setting := models.GetSecuritySetting(db)
+		return loggedEntity{
+			Title:      "Security logs",
+			Section:    "Security",
+			Highlight:  "security",
+			InProgress: isInProgress(setting.Status),
+		}, setting.ID == id && setting.TeamId == teamId
+
+	case models.FIREWALL_LOG_ENTITY:
+		return loggedEntity{Title: "Firewall logs", Section: "Firewall", Highlight: "firewall"}, true
+	}
+
+	return loggedEntity{}, false
+}
+
+func (c *Controller) EntityLogs(gctx *gin.Context) {
+	entity := gctx.Param("entity")
+	entityId, _ := strconv.ParseInt(gctx.Param("id"), 10, 64)
+	sessUser := c.GetSessionUser(gctx)
+	db := c.GetDB(gctx)
+
+	described, found := describeLoggedEntity(db, entity, entityId, sessUser.TeamId)
+	if !found {
+		c.FlashError(gctx, "Sorry, those logs could not be found.")
+		gctx.Redirect(http.StatusFound, "/")
+		return
+	}
+
+	page, err := strconv.Atoi(gctx.Query("page"))
 	if err != nil {
 		page = 1
 	}
@@ -30,148 +100,37 @@ func (c *Controller) ServerLogs(gctx *gin.Context) {
 		logLevelQuery = "&log_level=" + logLevel
 	}
 
-	logs := models.GetOperationLogs(c.GetDB(gctx), page, perPage, "server", serverId, logLevel, sessUser.TeamId)
-
-	var server models.Server
-	c.GetDB(gctx).Where("id", serverId).Where("team_id=?", sessUser.TeamId).Find(&server)
-	vars := gonja.Context{
-		"title":         "Server logs for: " + server.ServerName,
-		"logs":          logs,
+	c.Render("logs/list", gonja.Context{
+		"title":         described.Title,
+		"section":       described.Section,
+		"highlight":     described.Highlight,
+		"inProgress":    described.InProgress,
+		"entity":        entity,
+		"entityId":      entityId,
+		"logs":          models.GetOperationLogs(db, page, perPage, entity, entityId, logLevel, sessUser.TeamId),
 		"log_level":     logLevel,
+		"logLevelQuery": logLevelQuery,
+		"page":          page,
 		"nextPage":      page + 1,
 		"prevPage":      page - 1,
-		"server":        server,
-		"logLevelQuery": logLevelQuery,
-		"highlight":     "servers",
-	}
-
-	c.Render("logs/list", vars, gctx)
-
-}
-
-func (c *Controller) ServerLogView(gctx *gin.Context) {
-	serverId, _ := strconv.ParseInt(gctx.Param("id"), 10, 64)
-	var log models.OperationLog
-	sessUser := c.GetSessionUser(gctx)
-
-	c.GetDB(gctx).Where("id = ? and entity='server' and team_id=?", serverId, sessUser.TeamId).First(&log)
-	log.Log = utils.Decrypt(log.Log)
-
-	c.RenderWithoutLayout("logs/view_log", gonja.Context{
-		"log":       log.Log,
-		"highlight": "servers",
 	}, gctx)
-
 }
 
-func (c *Controller) SiteLogs(gctx *gin.Context) {
-	siteId, _ := strconv.ParseInt(gctx.Param("id"), 10, 64)
-	sessUser := c.GetSessionUser(gctx)
-	page, err := strconv.Atoi(gctx.Query("page"))
-	if err != nil {
-		page = 1
-	}
-
-	perPage, err := strconv.Atoi(gctx.Query("perPage"))
-	if err != nil {
-		perPage = 20
-	}
-
-	logLevel := gctx.Query("log_level")
-	logLevelQuery := ""
-	if logLevel != "" {
-		logLevelQuery = "&log_level=" + logLevel
-	}
-
-	logs := models.GetOperationLogs(c.GetDB(gctx), page, perPage, "site", siteId, logLevel, sessUser.TeamId)
-
-	var site models.Site
-	c.GetDB(gctx).Where("id=? and team_id=?", siteId, sessUser.TeamId).Find(&site)
-	vars := gonja.Context{
-		"title":         "Site logs for: " + site.SiteName,
-		"logs":          logs,
-		"log_level":     logLevel,
-		"nextPage":      page + 1,
-		"prevPage":      page - 1,
-		"site":          site,
-		"logLevelQuery": logLevelQuery,
-		"highlight":     "sites",
-	}
-
-	c.Render("logs/site_list", vars, gctx)
-
-}
-
-func (c *Controller) SiteLogView(gctx *gin.Context) {
-	siteID, _ := strconv.ParseInt(gctx.Param("id"), 10, 64)
+func (c *Controller) FullLog(gctx *gin.Context) {
+	logId, _ := strconv.ParseInt(gctx.Param("id"), 10, 64)
 	sessUser := c.GetSessionUser(gctx)
 
 	var log models.OperationLog
-	c.GetDB(gctx).Where("id = ? and entity='site' and team_id=?", siteID, sessUser.TeamId).First(&log)
-	log.Log = utils.Decrypt(log.Log)
-
-	site := models.GetSiteById(c.GetDB(gctx), log.EntityID, sessUser.TeamId)
-	c.RenderWithoutLayout("logs/view_log", gonja.Context{
-		"log":       log.Log,
-		"highlight": "sites",
-		"site":      site}, gctx)
-
-}
-
-func (c *Controller) CronLogs(gctx *gin.Context) {
-	cronId, _ := strconv.ParseInt(gctx.Param("id"), 10, 64)
-	page, err := strconv.Atoi(gctx.Query("page"))
-	sessUser := c.GetSessionUser(gctx)
-
-	if err != nil {
-		page = 1
-	}
-
-	perPage, err := strconv.Atoi(gctx.Query("perPage"))
-	if err != nil {
-		perPage = 20
-	}
-
-	logLevel := gctx.Query("log_level")
-	logLevelQuery := ""
-	if logLevel != "" {
-		logLevelQuery = "&log_level=" + logLevel
-	}
-
-	logs := models.GetOperationLogs(c.GetDB(gctx), page, perPage, "cron", cronId, logLevel, sessUser.TeamId)
-
-	var cron models.Cron
-	c.GetDB(gctx).Where("id=? and team_id=?", cronId, sessUser.TeamId).Find(&cron)
-	vars := gonja.Context{
-		"title":         "Cron logs for: " + cron.CronName,
-		"logs":          logs,
-		"log_level":     logLevel,
-		"nextPage":      page + 1,
-		"prevPage":      page - 1,
-		"cron":          cron,
-		"logLevelQuery": logLevelQuery,
-		"highlight":     "crons",
-	}
-
-	c.Render("logs/cron_list", vars, gctx)
-}
-
-func (c *Controller) CronLogView(gctx *gin.Context) {
-	cronId, _ := strconv.ParseInt(gctx.Param("id"), 10, 64)
-	sessUser := c.GetSessionUser(gctx)
-
-	var log models.OperationLog
-	c.GetDB(gctx).Where("id = ? and entity='cron' and team_id=?", cronId, sessUser.TeamId).First(&log)
-	log.Log = utils.Decrypt(log.Log)
+	c.GetDB(gctx).Where("id = ? AND entity = ? AND team_id = ?", logId, gctx.Param("entity"), sessUser.TeamId).
+		Limit(1).Find(&log)
 
 	if log.ID == 0 {
 		c.FlashError(gctx, "Sorry, log not found.")
-		gctx.Redirect(http.StatusFound, "/crons")
+		gctx.Redirect(http.StatusFound, "/")
+		return
 	}
 
 	c.RenderWithoutLayout("logs/view_log", gonja.Context{
-		"log":       log.Log,
-		"highlight": "crons",
+		"log": utils.Decrypt(log.Log),
 	}, gctx)
-
 }

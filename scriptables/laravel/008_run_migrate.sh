@@ -5,4 +5,4 @@ cd #USER_DIRECTORY#/#SITE_SLUG#
 
 echo "Running migrations..."
 
-sudo php#PHP_VERSION# artisan migrate
+sudo php#PHP_VERSION# artisan migrate --force

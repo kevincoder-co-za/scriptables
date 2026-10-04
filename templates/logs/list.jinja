@@ -1,15 +1,15 @@
 <div class="page-header d-print-none mb-3">
   <div class="row g-2 align-items-center">
     <div class="col">
-      <div class="page-pretitle">Servers</div>
-      <h2 class="page-title">Server logs for {{server.ServerName}} ({{server.ServerIP}})</h2>
+      <div class="page-pretitle">{{section}}</div>
+      <h2 class="page-title">{{title}}</h2>
     </div>
   </div>
 </div>
 
 <div class="card" id="log-card">
   <div class="card-body border-bottom py-3">
-    <form action="/logs/server/{{server.ID}}?page={{page}}" method="GET">
+    <form action="/logs/{{entity}}/{{entityId}}?page={{page}}" method="GET">
       <div class="d-flex flex-wrap align-items-center gap-2">
         <select name="log_level" class="form-select w-auto">
           <option value="" {% if log_level == "" %}selected{% endif %}>All logs</option>
@@ -21,12 +21,10 @@
           <i class="ti ti-search me-1"></i>Filter
         </button>
 
-        {% if server.Status == STATUS_QUEUED or server.Status == STATUS_RUNNING %}
-        {# While a build runs, htmx re-fetches this page every 10s and swaps just
-           the log card back in - no full page reload, no scroll jump. #}
-        <span class="badge bg-blue-lt ms-auto" hx-get="/logs/server/{{server.ID}}?page={{page}}{{logLevelQuery}}"
-          hx-trigger="every 10s" hx-select="#log-card" hx-target="#log-card" hx-swap="outerHTML">
-          <span class="spinner-border spinner-border-sm me-2" role="status"></span>Build in progress
+        {% if inProgress %}
+        <span class="badge bg-blue-lt ms-auto" hx-get="/logs/{{entity}}/{{entityId}}?page={{page}}{{logLevelQuery}}"
+          hx-trigger="every 5s" hx-select="#log-card" hx-target="#log-card" hx-swap="outerHTML">
+          <span class="spinner-border spinner-border-sm me-2" role="status"></span>In progress
         </span>
         {% endif %}
       </div>
@@ -55,7 +53,7 @@
             {% endif %}
           </td>
           <td>
-            <a href="/log/full/server/{{log.ID}}" target="_blank" class="btn btn-icon btn-sm" title="View full log"
+            <a href="/log/full/{{entity}}/{{log.ID}}" target="_blank" class="btn btn-icon btn-sm" title="View full log"
               data-bs-toggle="tooltip">
               <i class="ti ti-eye"></i>
             </a>
@@ -71,11 +69,11 @@
     <ul class="pagination m-0 ms-auto">
       {% if prevPage > 0 %}
       <li class="page-item">
-        <a class="page-link" href="/logs/server/{{server.ID}}?page={{prevPage}}{{logLevelQuery}}">Prev</a>
+        <a class="page-link" href="/logs/{{entity}}/{{entityId}}?page={{prevPage}}{{logLevelQuery}}">Prev</a>
       </li>
       {% endif %}
       <li class="page-item">
-        <a class="page-link" href="/logs/server/{{server.ID}}?page={{nextPage}}{{logLevelQuery}}">Next</a>
+        <a class="page-link" href="/logs/{{entity}}/{{entityId}}?page={{nextPage}}{{logLevelQuery}}">Next</a>
       </li>
     </ul>
   </div>

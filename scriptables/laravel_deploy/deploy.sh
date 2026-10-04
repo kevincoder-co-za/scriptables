@@ -11,4 +11,4 @@ sudo -u www-data php#PHP_VERSION# artisan view:clear
 
 sudo -u #SITE_SLUG# php#PHP_VERSION# /usr/bin/composer.phar install
 
-sudo -u #SITE_SLUG# php#PHP_VERSION# artisan migrate
+sudo -u #SITE_SLUG# php#PHP_VERSION# artisan migrate --force

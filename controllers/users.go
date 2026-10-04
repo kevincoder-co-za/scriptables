@@ -1,8 +1,8 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -11,9 +11,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/noirbizarre/gonja"
 	"github.com/pquerna/otp/totp"
+	"gorm.io/gorm"
 	"plexcorp.tech/scriptable/models"
 	"plexcorp.tech/scriptable/utils"
 )
+
+const registrationLockedMessage = "Registration is locked. Run the provision script with --reset-registration-token on this server to get a new one time registration token."
 
 func (c *Controller) MyProfile(gctx *gin.Context) {
 
@@ -133,7 +136,7 @@ func (c *Controller) CheckLogin(gctx *gin.Context) {
 	}
 
 	if len(vars["errors"].([]string)) == 0 {
-		user, err := models.Authenticate(db, email, password, gctx.Request.RemoteAddr)
+		user, err := models.Authenticate(db, email, password, gctx.ClientIP())
 		if err != nil {
 			vars["errors"] = []string{err.Error()}
 		}
@@ -195,7 +198,7 @@ func (c *Controller) TwoFactorAuthenticate(gctx *gin.Context) {
 	}
 
 	if len(vars["errors"].([]string)) == 0 {
-		user, err := models.Authenticate(db, email, password, gctx.Request.RemoteAddr)
+		user, err := models.Authenticate(db, email, password, gctx.ClientIP())
 		if err != nil {
 			vars["errors"] = []string{err.Error()}
 		}
@@ -253,7 +256,7 @@ func (c *Controller) ForgotPassword(gctx *gin.Context) {
 			return
 		}
 		email := gctx.PostForm("email")
-		isValidEmail := models.IsValidEmail(c.GetDB(gctx), email, gctx.Request.RemoteAddr)
+		isValidEmail := models.IsValidEmail(c.GetDB(gctx), email, gctx.ClientIP())
 
 		if isValidEmail {
 			models.SendPasswordResetToken(c.GetDB(gctx), email, "Password reset request", "forgotpassword")
@@ -362,7 +365,9 @@ func (c *Controller) HandleUserActionsFormPost(gctx *gin.Context) {
 		c.FlashError(gctx, "Sorry, failed to read user ID. Please try again.")
 	}
 
-	if action == "deactivate" {
+	if action == "deactivate" && id == sessUser.ID {
+		c.FlashError(gctx, "You cannot disable your own login.")
+	} else if action == "deactivate" {
 		err := models.ToggleUserStatus(c.GetDB(gctx), id, 0, sessUser.TeamId)
 		if err == nil {
 			c.FlashSuccess(gctx, "Successfully disabled users access. They won't be able to login.")
@@ -398,22 +403,30 @@ func (c *Controller) HandleUserActionsFormPost(gctx *gin.Context) {
 
 func (c *Controller) NewUser(gctx *gin.Context) {
 	c.Render("users/new_user", gonja.Context{
-		"serverTypes": models.GetServerTypes(),
-		"title":       "Choose server template",
+		"title":     "Add new user",
+		"highlight": "users",
 	}, gctx)
 }
 
+func isRegistrationOpen(db *gorm.DB) bool {
+	return models.CountUsers(db) == 0
+}
+
 func (c *Controller) RegisterForm(gctx *gin.Context) {
+	if !isRegistrationOpen(c.GetDB(gctx)) {
+		gctx.Redirect(http.StatusFound, "/users/login")
+		return
+	}
+
 	vars := gonja.Context{
 		"title": "Register for an account",
 		"email": "",
 		"name":  "",
 		"team":  ""}
 
-	allowRegistration, _ := strconv.ParseBool(os.Getenv("ALLOW_REGISTER"))
-	if !allowRegistration {
-		c.FlashError(gctx, "Registration is currently not allowed. Please enable the ENV flag first.")
-		gctx.Redirect(http.StatusFound, "/denied")
+	if !utils.HasUnusedRegistrationToken() {
+		vars["errors"] = []string{registrationLockedMessage}
+		c.RenderAuth("users/register", vars, gctx)
 		return
 	}
 
@@ -422,7 +435,7 @@ func (c *Controller) RegisterForm(gctx *gin.Context) {
 
 	if utils.Decrypt(s) != testEncryption {
 
-		vars["errors"] = []string{"Warning: there is a problem with your encryption key. Ensure that it is between 16, 24, 32 characters long. Please update this and restart the docker container."}
+		vars["errors"] = []string{"Warning: there is a problem with your encryption key. Ensure that it is between 16, 24, 32 characters long. Please update ENCRYPTION_KEY in your .env file and restart the scriptables service."}
 	}
 
 	c.RenderAuth("users/register", vars, gctx)
@@ -435,10 +448,8 @@ func (c *Controller) RegistrationComplete(gctx *gin.Context) {
 	team := gctx.PostForm("team")
 	passwordConfirmation := gctx.PostForm("password_confirm")
 
-	allowRegistration, _ := strconv.ParseBool(os.Getenv("ALLOW_REGISTER"))
-	if !allowRegistration {
-		c.FlashError(gctx, "Registration is currently not allowed. Please enable the ENV flag first.")
-		gctx.Redirect(http.StatusFound, "/denied")
+	if !isRegistrationOpen(c.GetDB(gctx)) {
+		gctx.Redirect(http.StatusFound, "/users/login")
 		return
 	}
 
@@ -455,6 +466,12 @@ func (c *Controller) RegistrationComplete(gctx *gin.Context) {
 		c.FlashError(gctx, "Sorry, your session has expired. Please try refreshing this page.")
 		gctx.Redirect(http.StatusFound, "/users/login")
 		return
+	}
+
+	if !utils.HasUnusedRegistrationToken() {
+		errors = append(errors, registrationLockedMessage)
+	} else if !utils.IsValidRegistrationToken(gctx.PostForm("registration_token")) {
+		errors = append(errors, "The registration token is incorrect. It was shown once when Scriptables was installed.")
 	}
 
 	if password != passwordConfirmation {
@@ -503,6 +520,10 @@ func (c *Controller) RegistrationComplete(gctx *gin.Context) {
 				"subject": "Welcome to Scriptables!",
 				"name":    user.Name,
 				"email":   user.Email,
+			}
+
+			if err := utils.BurnRegistrationToken(); err != nil {
+				fmt.Println("Could not remove the used registration token:", err)
 			}
 
 			utils.SendEmail("Welcome to Scriptables!", "", []string{user.Email}, vars, "welcome")

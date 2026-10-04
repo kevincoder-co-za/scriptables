@@ -1,2 +1,9 @@
-appdb.db
+*.db
+*.db-shm
+*.db-wal
 .env
+bin/
+data/
+.go/
+.cache/
+tmp/

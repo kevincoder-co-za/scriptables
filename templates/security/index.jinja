@@ -1,0 +1,122 @@
+<div class="page-header d-print-none mb-3">
+  <div class="row g-2 align-items-center">
+    <div class="col">
+      <h2 class="page-title">Security</h2>
+      <div class="text-secondary mt-1">{{numPassed}} of {{numChecks}} checks passing</div>
+    </div>
+    {% if setting.ID != 0 %}
+    <div class="col-auto ms-auto d-print-none">
+      <a href="/logs/security/{{setting.ID}}" class="btn">
+        <i class="ti ti-terminal-2 me-2"></i>Log
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row row-cards">
+  <div class="col-lg-5">
+    <div class="card" id="security-checks" {% if inProgress %}hx-get="/security" hx-trigger="every 5s"
+      hx-select="#security-checks" hx-target="#security-checks" hx-swap="outerHTML" {% endif %}>
+      <div class="card-header">
+        <h3 class="card-title">Server hardening</h3>
+        <div class="card-actions">
+          {% if setting.Status == STATUS_QUEUED %}
+          <span class="badge bg-azure-lt">Queued</span>
+          {% endif %}
+          {% if setting.Status == STATUS_RUNNING %}
+          <span class="badge bg-blue-lt">
+            <span class="spinner-border spinner-border-sm me-1" role="status"></span>Applying
+          </span>
+          {% endif %}
+          {% if setting.Status == STATUS_FAILED %}
+          <span class="badge bg-danger-lt">Last run failed</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="list-group list-group-flush">
+        {% for check in checks %}
+        <div class="list-group-item">
+          <div class="row align-items-center">
+            <div class="col-auto">
+              {% if check.Passed %}
+              <span class="status-dot status-green" style="width:.75rem;height:.75rem" title="Passing"></span>
+              {% else %}
+              <span class="status-dot status-red" style="width:.75rem;height:.75rem" title="Needs attention"></span>
+              {% endif %}
+            </div>
+            <div class="col">
+              <div class="fw-medium">{{check.Title}}</div>
+              <div class="text-secondary small">{{check.Detail}}</div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <form class="card" method="post" action="/security/apply">
+      <input type="hidden" name="_csrf_token" value="{{_csrf_token}}" />
+
+      <div class="card-header">
+        <h3 class="card-title">Harden this server</h3>
+      </div>
+
+      <div class="card-body">
+        <div class="alert alert-warning" role="alert">
+          <div class="d-flex">
+            <div class="me-3"><i class="ti ti-alert-triangle icon alert-icon"></i></div>
+            <div class="text-secondary">
+              This moves SSH to the port below, turns off root and password logins, and only lets you in with the
+              key you paste here. Keep your current SSH session open until you have logged in as the new user. If
+              your hosting provider has its own firewall, open the new port there first.
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label class="form-label required">SSH port</label>
+            <input type="number" class="form-control" name="ssh_port" value="{{ssh_port}}" min="1" max="65535"
+              required />
+          </div>
+
+          <div class="col-md-8 mb-3">
+            <label class="form-label required">Sudo username</label>
+            <input type="text" class="form-control" name="sudo_username" value="{{sudo_username}}"
+              placeholder="deploy" autocomplete="off" required />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Sudo password</label>
+            <input type="password" class="form-control" name="password" autocomplete="new-password" />
+            <small class="form-hint">Asked whenever this user runs sudo. Leave empty to keep the current one.</small>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Confirm sudo password</label>
+            <input type="password" class="form-control" name="password_confirm" autocomplete="new-password" />
+          </div>
+        </div>
+
+        <div>
+          <label class="form-label required">SSH public key</label>
+          <textarea class="form-control font-monospace" name="public_key" rows="4"
+            placeholder="ssh-ed25519 AAAA... you@laptop" required>{{public_key}}</textarea>
+          <small class="form-hint">The contents of your <code>~/.ssh/id_ed25519.pub</code> or similar.</small>
+        </div>
+      </div>
+
+      <div class="card-footer text-end">
+        <button type="submit" class="btn btn-primary" {% if inProgress %}disabled{% endif %}>
+          <i class="ti ti-shield-check me-2"></i>Apply security settings
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
