@@ -14,42 +14,34 @@ import (
 	"plexcorp.tech/scriptable/controllers"
 	"plexcorp.tech/scriptable/middleware"
 	"plexcorp.tech/scriptable/models"
+	"plexcorp.tech/scriptable/utils"
 )
 
-// This method fires cron jobs found in the console/ directory.
-func RunJobs() {
+const queuePollInterval = 5 * time.Second
 
+func runSafely(job func(db *gorm.DB), db *gorm.DB) {
 	defer func() {
-
 		if r := recover(); r != nil {
-			fmt.Println("Caught and recovered from cron daemon crash:", r)
+			fmt.Println("Caught and recovered from job runner crash:", r)
 		}
-
 	}()
 
-	db, err := models.GetAppDB()
+	job(db)
+}
 
-	if err == nil {
-		sqlDB, err := db.DB()
-
-		if err == nil {
-			sqlDB.SetMaxIdleConns(10)
-			sqlDB.SetMaxOpenConns(100)
-			sqlDB.SetConnMaxLifetime(time.Minute * 30)
-			defer sqlDB.Close()
+func runForever(db *gorm.DB, jobs ...func(db *gorm.DB)) {
+	for {
+		for _, job := range jobs {
+			runSafely(job, db)
 		}
+
+		time.Sleep(queuePollInterval)
 	}
+}
 
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	console.DeployBranch(db)
-	console.BuildServers(db)
-	console.BuildSites(db)
-	console.BuildCrons(db)
-
+func startQueueWorkers(db *gorm.DB) {
+	go runForever(db, console.InstallQueuedApplications, console.ApplyQueuedSecuritySettings, console.BuildQueuedSites, console.DeployQueuedSites)
+	go runForever(db, console.SyncQueuedCrons)
 }
 
 func loadEnv() {
@@ -68,65 +60,24 @@ func loadEnv() {
 	}
 }
 
-func main() {
-	loadEnv()
+func listenAddress() string {
+	return os.Getenv("SCRIPTABLES_SERVER_DSN_HOST") + ":" + utils.PanelPort()
+}
 
-	if mode := os.Getenv("GIN_MODE"); mode != "" {
-		gin.SetMode(mode)
-	}
-
-	location, err := time.LoadLocation(os.Getenv("TZ"))
-	if err != nil {
-		fmt.Println("Timezone entered is invalid:", err)
-		return
-	}
-
-	time.Local = location
-
-	go func() {
-		for {
-			RunJobs()
-			time.Sleep(30 * time.Second)
-		}
-	}()
-
-	mysqlDSN := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		os.Getenv("MYSQL_USER"),
-		os.Getenv("MYSQL_PASSWORD"),
-		os.Getenv("MYSQL_HOST"),
-		os.Getenv("MYSQL_PORT"),
-		os.Getenv("MYSQL_DATABASE"),
-	)
-
-	os.Setenv("MYSQL_DSN", mysqlDSN)
-	router := gin.Default()
-	router.StaticFS("/static", http.Dir("./static"))
-
-	var trustedProxies []string
+func trustedProxies() []string {
+	var proxies []string
 	for _, ip := range strings.Split(os.Getenv("ALLOWED_IPS"), ",") {
 		if ip = strings.TrimSpace(ip); ip != "" {
-			trustedProxies = append(trustedProxies, ip)
+			proxies = append(proxies, ip)
 		}
 	}
 
-	if err := router.SetTrustedProxies(trustedProxies); err != nil {
-		fmt.Println("Invalid ALLOWED_IPS:", err)
-		return
-	}
+	return proxies
+}
 
-	router.Use(middleware.DBMiddleware())
-	router.Use(middleware.SetupSession())
-	router.Use(middleware.AuthMiddleware())
-	router.Use(func(c *gin.Context) {
-		c.Next()
-		db := c.MustGet("db").(*gorm.DB)
-		sqlDB, err := db.DB()
-		if err == nil {
-			defer sqlDB.Close()
-		}
-	})
-
+func registerRoutes(router *gin.Engine) {
 	controller := controllers.Controller{}
+
 	router.GET("/trial-expired", controller.TrialExpired)
 	router.GET("/users/logout", controller.Logout)
 	router.GET("/users/login", controller.LoginView)
@@ -142,28 +93,24 @@ func main() {
 	router.POST("/user/profile/update", controller.UpdateProfile)
 	router.GET("/user/profile", controller.MyProfile)
 	router.GET("/user/create", controller.NewUser)
-
-	router.GET("/", controller.ChooseServerType)
+	router.GET("/user/2factor/qrcode", controller.ShowQrCodePng)
 
 	router.GET("/denied", controller.AccessDenied)
-	router.GET("/user/2factor/qrcode", controller.ShowQrCodePng)
-	router.GET("/log/full/server/:id", controller.ServerLogView)
-	router.GET("/logs/server/:id", controller.ServerLogs)
-	router.GET("/log/full/site/:id", controller.SiteLogView)
-	router.GET("/logs/site/:id", controller.SiteLogs)
-	router.GET("/logs/cron/:id", controller.CronLogs)
-	router.GET("/log/full/cron/:id", controller.CronLogView)
 
-	router.GET("/servers", controller.Servers)
-	router.Any("/server/create/:servertype", controller.CreateServer)
-	router.Any("/server/update/:id", controller.UpdateServer)
-	router.Any("/server/test-ssh/:id", controller.ShowTestConnectionLoader)
-	router.Any("/server/test-ssh-ajax/:id", controller.TestSSHConnection)
-	router.POST("/server/retrybuild", controller.RetryBuildServer)
-	router.GET("/server/firewall/:serverID", controller.FirewallRules)
-	router.Any("/server/firewall-ajax/:serverID", controller.FirewallRulesAjax)
-	router.POST("/server/firewall/delete/rule", controller.DeleteFirewallRule)
-	router.POST("/server/firewall/add/rule", controller.AddFirewallRule)
+	router.GET("/", controller.Applications)
+	router.GET("/applications", controller.Applications)
+	router.POST("/application/install", controller.InstallApplication)
+
+	router.GET("/logs/:entity/:id", controller.EntityLogs)
+	router.GET("/log/full/:entity/:id", controller.FullLog)
+
+	router.GET("/firewall", controller.Firewall)
+	router.GET("/firewall/rules", controller.FirewallRules)
+	router.POST("/firewall/rule/add", controller.AddFirewallRule)
+	router.POST("/firewall/rule/delete", controller.DeleteFirewallRule)
+
+	router.GET("/security", controller.Security)
+	router.POST("/security/apply", controller.ApplySecuritySettings)
 
 	router.GET("/site/deployKey/:id", controller.CreateSiteDeployKey)
 	router.POST("/site/generateDeployKey", controller.GenerateDeployKey)
@@ -182,10 +129,51 @@ func main() {
 	router.POST("/cron/disable/", controller.DisableCron)
 	router.POST("/cron/retrybuild", controller.RetryCronBuild)
 
-	router.GET("/systemd/services/:id/list", controller.ListServices)
-
 	router.GET("/webhooks/deploy/:sid/:token", controller.DeployWebhookSite)
+}
 
-	router.Run(os.Getenv("SCRIPTABLES_SERVER_DSN_HOST") + ":" + os.Getenv("SCRIPTABLES_SERVER_DSN_PORT"))
+func main() {
+	loadEnv()
 
+	if mode := os.Getenv("GIN_MODE"); mode != "" {
+		gin.SetMode(mode)
+	}
+
+	location, err := time.LoadLocation(os.Getenv("TZ"))
+	if err != nil {
+		fmt.Println("Timezone entered is invalid:", err)
+		return
+	}
+
+	time.Local = location
+
+	if os.Getenv("SESSION_SECRET") == "" {
+		fmt.Println("SESSION_SECRET is not set. Add a long random value to your .env file.")
+		return
+	}
+
+	db, err := models.OpenDatabase()
+	if err != nil {
+		fmt.Println("Could not open the sqlite database:", err)
+		return
+	}
+
+	models.FailInterruptedJobs(db)
+	startQueueWorkers(db)
+
+	router := gin.Default()
+	router.StaticFS("/static", http.Dir("./static"))
+
+	if err := router.SetTrustedProxies(trustedProxies()); err != nil {
+		fmt.Println("Invalid ALLOWED_IPS:", err)
+		return
+	}
+
+	router.Use(middleware.DBMiddleware(db))
+	router.Use(middleware.SetupSession())
+	router.Use(middleware.AuthMiddleware())
+
+	registerRoutes(router)
+
+	router.Run(listenAddress())
 }

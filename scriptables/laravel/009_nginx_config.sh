@@ -30,8 +30,7 @@ server {
 }
 EOF
 
-sudo php#PHP_VERSION#-fpm stop
-sudo php#PHP_VERSION#-fpm start
+sudo systemctl restart php#PHP_VERSION#-fpm
 
-sudo /etc/init.d/nginx stop
-sudo /etc/init.d/nginx start
+sudo nginx -t
+sudo systemctl reload nginx

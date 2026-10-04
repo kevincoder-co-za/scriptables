@@ -1,0 +1,13 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+cmd = "go build -o ./tmp/scriptables ."
+bin = "./tmp/scriptables"
+include_ext = ["go"]
+exclude_dir = ["tmp", "bin", "data", "static", "templates", "scriptables", "documentation", ".git", ".go", ".cache"]
+delay = 500
+stop_on_error = true
+
+[misc]
+clean_on_exit = true

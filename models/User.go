@@ -84,6 +84,12 @@ func SendPasswordResetToken(db *gorm.DB, email string, subject string, template 
 	utils.SendEmail(subject, "", []string{user.Email}, vars, template)
 }
 
+func CountUsers(db *gorm.DB) int64 {
+	var total int64
+	db.Model(&User{}).Count(&total)
+	return total
+}
+
 func GetUserById(db *gorm.DB, id int64) User {
 	var user User
 	db.Where("id=?", id).First(&user)

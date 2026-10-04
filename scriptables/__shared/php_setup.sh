@@ -1,3 +1,4 @@
+sudo apt-get install -y software-properties-common curl
 sudo add-apt-repository -y ppa:ondrej/php
 
 sudo apt-get update -y
@@ -20,6 +21,5 @@ if command -v "composer" > /dev/null 2>&1; then
     exit 0
 fi
 
-cd /tmp/ && wget https://getcomposer.org/download/latest-stable/composer.phar
-sudo mv /tmp/composer.phar /usr/bin/composer.phar
+sudo curl -fsSL https://getcomposer.org/download/latest-stable/composer.phar -o /usr/bin/composer.phar
 sudo chmod +x /usr/bin/composer.phar

@@ -20,7 +20,7 @@
     </div>
     <p class="empty-title">No cron jobs found</p>
     <p class="empty-subtitle text-secondary">
-      Schedule your first job on one of your servers.
+      Schedule your first job on this machine.
     </p>
     <div class="empty-action">
       <a href="/cron/create" class="btn btn-primary">
@@ -47,7 +47,6 @@
       <thead>
         <tr>
           <th>Cron name</th>
-          <th>Server</th>
           <th>Status</th>
           <th>User</th>
           <th>Expression</th>
@@ -59,7 +58,6 @@
         {% for cron in crons %}
         <tr>
           <td>{{cron.CronName}}</td>
-          <td class="text-secondary">{{cron.ServerName}}</td>
           <td>
             {% if cron.Status == STATUS_QUEUED %}
             <span class="badge bg-secondary-lt">Queued</span>

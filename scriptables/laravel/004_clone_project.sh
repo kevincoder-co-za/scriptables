@@ -4,9 +4,6 @@ set +e
 
 cd #USER_DIRECTORY#
 
-sudo -u #SITE_SLUG# /bin/bash -c eval `ssh-agent`
-sudo -u #SITE_SLUG# /bin/bash -c ssh-add #KEY_PATH#
-
 echo "Cloning project..."
 errorMessage=""
 if [ -d "#USER_DIRECTORY#/#SITE_SLUG#" ]; then

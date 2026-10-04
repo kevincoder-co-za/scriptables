@@ -6,6 +6,12 @@
   <input type="hidden" name="_csrf_token" value="{{_csrf_token}}" />
 
   <div class="mb-3">
+    <label class="form-label required">Registration token</label>
+    <input type="password" name="registration_token" class="form-control" autocomplete="off" required />
+    <small class="form-hint">Shown once when Scriptables was installed on this server.</small>
+  </div>
+
+  <div class="mb-3">
     <label class="form-label required">Your name</label>
     <input type="text" name="name" value="{{name}}" class="form-control" placeholder="Jane Doe" required />
   </div>

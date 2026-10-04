@@ -1,5 +1,3 @@
-// The firewall interface works with UFW, we run the native ufw status command and then parse the output into
-// txt that we can manipulate via Scriptables GUI.
 package models
 
 import (
@@ -9,63 +7,57 @@ import (
 	"strings"
 
 	"gorm.io/gorm"
-	"plexcorp.tech/scriptable/sshclient"
+	"plexcorp.tech/scriptable/utils"
 )
+
+const FIREWALL_LOG_ENTITY = "firewall"
 
 type FirewallRule struct {
 	Number int64
 	Text   string
 }
 
-func GetRules(client *sshclient.Client) ([]FirewallRule, error) {
-	firewall_rules := []FirewallRule{}
-	prefix := "------ firewall rules ---"
-	result, err := client.Script("echo \"" + prefix + "\" && sudo ufw status numbered").SmartOutput()
-	output := string(result)
+type FirewallState struct {
+	Active bool
+	Rules  []FirewallRule
+}
 
-	if strings.Contains(output, prefix) {
-		lines := strings.Split(output, prefix)
-		rules := strings.Split(lines[1], "\n")
-		for _, rule := range rules {
-			if strings.Contains(rule, "[") {
-				var parts []string
-				ruleType := ""
-				if strings.Contains(rule, "ALLOW IN") {
-					parts = strings.Split(rule, "ALLOW IN")
-					ruleType = "ALLOW IN"
-				} else if strings.Contains(rule, "ALLOW OUT") {
-					parts = strings.Split(rule, "ALLOW OUT")
-					ruleType = "ALLOW OUT"
-				} else if strings.Contains(rule, "DENY OUT") {
-					parts = strings.Split(rule, "DENY OUT")
-					ruleType = "DENY OUT"
-				} else if strings.Contains(rule, "DENY IN") {
-					parts = strings.Split(rule, "DENY IN")
-					ruleType = "DENY IN"
-				}
+var firewallRuleTypes = []string{"ALLOW IN", "ALLOW OUT", "DENY IN", "DENY OUT"}
 
-				for i, p := range parts {
+func GetFirewallState() (FirewallState, error) {
+	state := FirewallState{Rules: []FirewallRule{}}
 
-					parts[i] = strings.TrimSpace(p)
-				}
-
-				if len(parts) >= 2 {
-					parts[0] = strings.ReplaceAll(parts[0], "]", "] FROM : ")
-					rule = parts[0] + "   TO : " + parts[1] + "  << " + ruleType + " >>"
-				}
-
-				firewall_rules = append(firewall_rules, FirewallRule{
-					Number: parseRuleNumber(rule),
-					Text:   rule,
-				})
-			}
-		}
-
-	} else {
-		err = errors.New("failed to access firewall rules - please try again.")
+	output, err := utils.RunCommandAsRoot("ufw", "status", "numbered")
+	if err != nil {
+		return state, errors.New("failed to read firewall rules: " + strings.TrimSpace(output))
 	}
 
-	return firewall_rules, err
+	state.Active = strings.Contains(output, "Status: active")
+
+	for _, line := range strings.Split(output, "\n") {
+		if strings.Contains(line, "[") {
+			state.Rules = append(state.Rules, FirewallRule{
+				Number: parseRuleNumber(line),
+				Text:   describeRule(line),
+			})
+		}
+	}
+
+	return state, nil
+}
+
+func describeRule(line string) string {
+	for _, ruleType := range firewallRuleTypes {
+		if !strings.Contains(line, ruleType) {
+			continue
+		}
+
+		parts := strings.SplitN(line, ruleType, 2)
+		to := strings.ReplaceAll(strings.TrimSpace(parts[0]), "]", "] TO : ")
+		return to + "   FROM : " + strings.TrimSpace(parts[1]) + "  << " + ruleType + " >>"
+	}
+
+	return line
 }
 
 func parseRuleNumber(rule string) int64 {
@@ -83,36 +75,24 @@ func parseRuleNumber(rule string) int64 {
 	return number
 }
 
-func DeleteFirewallRule(db *gorm.DB, server *ServerDetails, ruleNumber int64, rule string) error {
-	client, err := GetSSHClient(server, false)
+func DeleteFirewallRule(db *gorm.DB, ruleNumber int64, rule string, teamId int64) error {
+	output, err := utils.RunCommandAsRoot("ufw", "--force", "delete", strconv.FormatInt(ruleNumber, 10))
 	if err != nil {
-		return err
+		LogError(db, 0, FIREWALL_LOG_ENTITY, output, fmt.Sprintf("Failed deleting firewall rule number: %d, rule: %s", ruleNumber, rule), teamId)
+		return errors.New(strings.TrimSpace(output))
 	}
 
-	cmd := fmt.Sprintf(" echo \"y\" | sudo ufw delete %d", ruleNumber)
-	out, err := client.Script(cmd).SmartOutput()
-	if err == nil {
-		LogInfo(db, server.ID, "server", string(out), fmt.Sprintf(
-			"Deleted firewall rule number: %d, rule: %s", ruleNumber, rule), server.TeamId)
-	}
-
-	return err
+	LogInfo(db, 0, FIREWALL_LOG_ENTITY, output, fmt.Sprintf("Deleted firewall rule number: %d, rule: %s", ruleNumber, rule), teamId)
+	return nil
 }
 
-func AddFirewallRule(db *gorm.DB, server *ServerDetails, rule string) error {
-	client, err := GetSSHClient(server, false)
+func AddFirewallRule(db *gorm.DB, rule string, teamId int64) error {
+	output, err := utils.RunCommandAsRoot("ufw", strings.Fields(rule)...)
 	if err != nil {
-		return err
+		LogError(db, 0, FIREWALL_LOG_ENTITY, output, fmt.Sprintf("Failed adding firewall rule: %s", rule), teamId)
+		return errors.New(strings.TrimSpace(output))
 	}
 
-	cmd := fmt.Sprintf(`sudo ufw %s`, rule)
-	fmt.Println(cmd)
-	out, err := client.Script(cmd).SmartOutput()
-	if err == nil {
-		LogInfo(db, server.ID, "server", string(out), fmt.Sprintf("Added firewall rule: %s", rule), server.TeamId)
-	} else {
-		LogError(db, server.ID, "server", string(out), fmt.Sprintf("Failed adding firewall rule: %s", rule), server.TeamId)
-	}
-
-	return err
+	LogInfo(db, 0, FIREWALL_LOG_ENTITY, output, fmt.Sprintf("Added firewall rule: %s", rule), teamId)
+	return nil
 }

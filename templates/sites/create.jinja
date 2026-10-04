@@ -7,7 +7,7 @@
   </div>
 </div>
 
-<form method="post" action="/site/save/">
+<form method="post" action="/site/save">
   <input type="hidden" name="_csrf_token" value="{{_csrf_token}}" />
 
   <div class="row row-cards">
@@ -22,24 +22,11 @@
             <input class="form-control" required name="domain" value="{{domain}}" placeholder="example.com" />
           </div>
 
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label required">Server</label>
-              <select class="form-select" required name="server_id">
-                {% for server in servers %}
-                <option value="{{server.ID}}" {% if server._id == server_id %}selected{% endif %}>
-                  {{server.ServerName}}
-                </option>
-                {% endfor %}
-              </select>
-            </div>
-
-            <div class="col-md-6 mb-3">
-              <label class="form-label required">Site type</label>
-              <select name="scriptables" class="form-select" required>
-                <option value="laravel" selected>Laravel</option>
-              </select>
-            </div>
+          <div class="mb-3">
+            <label class="form-label required">Site type</label>
+            <select name="scriptables" class="form-select" required>
+              <option value="laravel" selected>Laravel</option>
+            </select>
           </div>
 
           <div class="mb-3">
@@ -76,7 +63,7 @@
               <label class="form-label">HTTPS</label>
               <label class="form-check form-switch mt-2">
                 <input class="form-check-input" type="checkbox" name="letsencrypt_certificate" {% if
-                  LetsEncryptCertificate == 1 %}checked{% endif %} />
+                  letsencrypt_certificate == 1 %}checked{% endif %} />
                 <span class="form-check-label">Set up a Let's Encrypt certificate</span>
               </label>
             </div>

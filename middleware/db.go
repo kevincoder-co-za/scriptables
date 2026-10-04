@@ -2,12 +2,12 @@ package middleware
 
 import (
 	"github.com/gin-gonic/gin"
-	"plexcorp.tech/scriptable/models"
+	"gorm.io/gorm"
 )
 
-func DBMiddleware() gin.HandlerFunc {
+func DBMiddleware(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		models.SetDBConnection(c)
+		c.Set("db", db)
 		c.Next()
 	}
 }
