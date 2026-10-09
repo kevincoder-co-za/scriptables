@@ -1,85 +1,104 @@
 package utils
 
 import (
-	"context"
+	"errors"
 	"fmt"
+	"net/mail"
 	"net/smtp"
-	"os"
 	"time"
 
 	"github.com/noirbizarre/gonja"
 )
 
-func SendEmail(subject string, from string, recipients []string, vars gonja.Context, template string) {
+const mailSendTimeout = 15 * time.Second
 
-	smtpHost := os.Getenv("SMTP_HOST")
-	smtpPort := os.Getenv("SMTP_PORT")
-	smtpUsername := os.Getenv("SMTP_USERNAME")
-	smtpPassword := os.Getenv("SMTP_PASSWORD")
+type MailConfig struct {
+	Host      string
+	Port      string
+	Username  string
+	Password  string
+	FromEmail string
+	BaseUrl   string
+}
 
-	if from == "" {
-		from = os.Getenv("SMTP_FROM_EMAIL")
-	}
+func (config MailConfig) IsConfigured() bool {
+	return config.Host != "" && config.Port != "" && config.Username != "" && config.Username != "xxxx"
+}
 
-	if smtpUsername == "xxxx" {
-		fmt.Println("Oops! SMTP mail is not configured. Skipping sending this email.")
-		return
-	}
+func (config MailConfig) address() string {
+	return fmt.Sprintf("%s:%s", config.Host, config.Port)
+}
 
-	defer func() {
-
-		if r := recover(); r != nil {
-			fmt.Println("Caught and recovered from mail sender crash:", r, "Subject: ", subject, "Recipients: ", recipients)
-		}
-
-	}()
-	vars["scriptable_base_url"] = os.Getenv("SCRIPTABLE_URL")
+func renderEmail(vars gonja.Context, template string, baseUrl string) (string, error) {
+	vars["scriptable_base_url"] = baseUrl
 
 	view, err := gonja.Must(gonja.FromFile("templates/emails/" + template + ".jinja")).Execute(vars)
-
 	if err != nil {
-		fmt.Println(err)
+		return "", err
 	}
 
 	vars["view"] = view
-	master := gonja.Must(gonja.FromFile("templates/emails/master.jinja"))
-	tpl, err := master.Execute(vars)
+	return gonja.Must(gonja.FromFile("templates/emails/master.jinja")).Execute(vars)
+}
 
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	message := "From: " + from + "\n"
-	message += "To: " + recipients[0] + "\n"
+func buildMessage(from string, to string, subject string, body string) []byte {
+	message := "From: " + from + "\r\n"
+	message += "To: " + to + "\r\n"
 	message += fmt.Sprintf("Subject: %s\r\n", subject)
 	message += "MIME-version: 1.0;\r\n"
 	message += "Content-Type: text/html; charset=\"UTF-8\";\r\n"
 	message += "Content-Transfer-Encoding: 7bit;\r\n"
 	message += "\r\n"
-	message += tpl
+	message += body
+	return []byte(message)
+}
 
-	if from == "" {
-		from = os.Getenv("SMTP_FROM")
+func envelopeAddress(from string) string {
+	parsed, err := mail.ParseAddress(from)
+	if err != nil {
+		return from
 	}
 
-	auth := smtp.PlainAuth("", smtpUsername, smtpPassword, smtpHost)
-	address := fmt.Sprintf("%s:%s", smtpHost, smtpPort)
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
+	return parsed.Address
+}
 
-	done := make(chan bool)
+func sendWithTimeout(config MailConfig, from string, recipients []string, message []byte) error {
+	auth := smtp.PlainAuth("", config.Username, config.Password, config.Host)
+	from = envelopeAddress(from)
+
+	done := make(chan error, 1)
 	go func() {
-		err := smtp.SendMail(address, auth, from, recipients, []byte(message))
-		if err != nil {
-			fmt.Println(err)
-		}
-		done <- true
+		done <- smtp.SendMail(config.address(), auth, from, recipients, message)
 	}()
 
 	select {
-	case <-done:
-	case <-ctx.Done():
-		fmt.Println("Mail send timed out", "Subject: ", subject, "Recipients: ", recipients)
+	case err := <-done:
+		return err
+	case <-time.After(mailSendTimeout):
+		return errors.New("timed out talking to " + config.address())
+	}
+}
+
+func SendEmail(config MailConfig, subject string, from string, recipients []string, vars gonja.Context, template string) error {
+	if !config.IsConfigured() {
+		fmt.Println("Oops! SMTP mail is not configured. Skipping sending this email.")
+		return errors.New("SMTP mail is not configured")
 	}
 
+	if from == "" {
+		from = config.FromEmail
+	}
+
+	body, err := renderEmail(vars, template, config.BaseUrl)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	err = sendWithTimeout(config, from, recipients, buildMessage(from, recipients[0], subject, body))
+	if err != nil {
+		fmt.Println("Mail send failed:", err, "Subject:", subject, "Recipients:", recipients)
+	}
+
+	return err
 }

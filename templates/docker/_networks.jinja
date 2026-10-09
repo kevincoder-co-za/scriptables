@@ -1,0 +1,91 @@
+{% include "templates/docker/_messages.jinja" %}
+
+<form class="card-body border-bottom" hx-post="/docker/network/create" hx-target="#docker-tab" hx-swap="innerHTML"
+  hx-indicator="#docker-loading" hx-disabled-elt="find button[type=submit]">
+  <input type="hidden" name="_csrf_token" value="{{ _csrf_token }}" />
+  <div class="row g-2 align-items-end">
+    <div class="col-md-6">
+      <label class="form-label">Add a network</label>
+      <input type="text" name="name" class="form-control" placeholder="my-app-net" required />
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Driver</label>
+      <select name="driver" class="form-select">
+        {% for driver in drivers %}
+        <option value="{{ driver }}">{{ driver }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3 text-md-end">
+      <button type="submit" class="btn btn-primary btn-sm">
+        <i class="ti ti-plus me-1"></i>Add network
+      </button>
+    </div>
+  </div>
+</form>
+
+<div class="table-responsive">
+  <table class="table table-vcenter card-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>ID</th>
+        <th>Driver</th>
+        <th>Scope</th>
+        <th class="w-1"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for network in networks %}
+      <tr>
+        <td class="fw-medium">
+          {{ network.Name }}
+          {% if network.IsBuiltIn() %}<span class="badge bg-secondary-lt ms-2">built in</span>{% endif %}
+        </td>
+        <td class="font-monospace text-secondary small">{{ network.ID }}</td>
+        <td>{{ network.Driver }}</td>
+        <td class="text-secondary">{{ network.Scope }}</td>
+        <td>
+          {% if not network.IsBuiltIn() %}
+          <button type="button" class="btn btn-icon btn-sm btn-ghost-danger" data-bs-toggle="modal"
+            data-bs-target="#delete-network-{{ network.ID }}" title="Delete network">
+            <i class="ti ti-trash"></i>
+          </button>
+
+          <div class="modal modal-blur fade" id="delete-network-{{ network.ID }}" tabindex="-1" role="dialog"
+            aria-hidden="true">
+            <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+              <div class="modal-content">
+                <div class="modal-body text-center py-4">
+                  <i class="ti ti-alert-triangle text-danger mb-2" style="font-size:3rem"></i>
+                  <h3>Are you sure?</h3>
+                  <div class="text-secondary">
+                    Docker refuses to delete a network that a container is still attached to.
+                    <div class="font-monospace mt-2">{{ network.Name }}</div>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <form class="w-100" hx-post="/docker/network/delete" hx-target="#docker-tab" hx-swap="innerHTML"
+                    hx-indicator="#docker-loading" hx-disabled-elt="find button[type=submit]">
+                    <input type="hidden" name="_csrf_token" value="{{ _csrf_token }}" />
+                    <input type="hidden" name="id" value="{{ network.ID }}" />
+                    <div class="row">
+                      <div class="col">
+                        <button type="button" class="btn w-100" data-bs-dismiss="modal">Cancel</button>
+                      </div>
+                      <div class="col">
+                        <button type="submit" class="btn btn-danger w-100" data-bs-dismiss="modal">Delete</button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

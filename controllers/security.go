@@ -9,8 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/noirbizarre/gonja"
 	"golang.org/x/crypto/ssh"
-	"plexcorp.tech/scriptable/models"
-	"plexcorp.tech/scriptable/utils"
+	"plexscriptables.com/scriptables/models"
+	"plexscriptables.com/scriptables/utils"
 )
 
 const minimumSudoPasswordLength = 8

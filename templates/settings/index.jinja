@@ -1,0 +1,142 @@
+<div class="page-header d-print-none mb-3">
+  <div class="row g-2 align-items-center">
+    <div class="col">
+      <h2 class="page-title">Settings</h2>
+      <div class="text-secondary mt-1">This panel is reachable at <a href="{{publicUrl}}">{{publicUrl}}</a></div>
+    </div>
+    {% if setting.ID != 0 %}
+    <div class="col-auto ms-auto d-print-none">
+      <a href="/logs/settings/{{setting.ID}}" class="btn">
+        <i class="ti ti-terminal-2 me-2"></i>Domain setup log
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row row-cards">
+  <div class="col-lg-5">
+    <form class="card" method="post" action="/settings/domain" id="domain-card" {% if domainInProgress %}hx-get="/settings"
+      hx-trigger="every 5s" hx-select="#domain-card" hx-target="#domain-card" hx-swap="outerHTML" {% endif %}>
+      <input type="hidden" name="_csrf_token" value="{{_csrf_token}}" />
+
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-world me-2"></i>Panel domain</h3>
+        <div class="card-actions">
+          {% if setting.DomainStatus == STATUS_QUEUED %}
+          <span class="badge bg-azure-lt">Queued</span>
+          {% endif %}
+          {% if setting.DomainStatus == STATUS_RUNNING %}
+          <span class="badge bg-blue-lt">
+            <span class="spinner-border spinner-border-sm me-1" role="status"></span>Setting up
+          </span>
+          {% endif %}
+          {% if setting.DomainStatus == STATUS_COMPLETE %}
+          <span class="badge bg-success-lt">Active</span>
+          {% endif %}
+          {% if setting.DomainStatus == STATUS_FAILED %}
+          <span class="badge bg-danger-lt">Setup failed</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card-body">
+        {% if domainProvisioned %}
+        <div class="alert alert-info" role="alert">
+          <div class="d-flex">
+            <div class="me-3"><i class="ti ti-info-circle icon alert-icon"></i></div>
+            <div class="text-secondary">
+              This domain was set when Scriptables was installed with <code>--domain</code>. To change it, re-run
+              the installer on the server.
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <p class="text-secondary">
+          Point a domain at this server and Scriptables will install Nginx and Certbot, proxy the panel through
+          Nginx, request a Let's Encrypt certificate and close port {{panelPort}} to the internet. Create the DNS A record first.
+        </p>
+        {% endif %}
+
+        <div class="mb-3">
+          <label class="form-label required">Domain</label>
+          <input type="text" class="form-control" name="domain" value="{{domain}}" placeholder="panel.example.com"
+            {% if domainProvisioned %}readonly{% else %}required{% endif %} />
+        </div>
+
+        <div>
+          <label class="form-label">Certificate expiry notices</label>
+          <input type="email" class="form-control" name="certificate_email" value="{{certificate_email}}"
+            placeholder="you@example.com" {% if domainProvisioned %}readonly{% endif %} />
+          <small class="form-hint">Optional. Let's Encrypt emails this address if renewal ever fails.</small>
+        </div>
+      </div>
+
+      {% if not domainProvisioned %}
+      <div class="card-footer text-end">
+        <button type="submit" class="btn btn-primary" {% if domainInProgress %}disabled{% endif %}>
+          <i class="ti ti-lock me-2"></i>Set up domain and HTTPS
+        </button>
+      </div>
+      {% endif %}
+    </form>
+  </div>
+
+  <div class="col-lg-7">
+    <form class="card" method="post" action="/settings/smtp">
+      <input type="hidden" name="_csrf_token" value="{{_csrf_token}}" />
+
+      <div class="card-header">
+        <h3 class="card-title"><i class="ti ti-mail me-2"></i>Outgoing email (SMTP)</h3>
+      </div>
+
+      <div class="card-body">
+        <p class="text-secondary">
+          Used for user invites, password resets and welcome emails. Saving also opens the SMTP port for outgoing
+          traffic in the firewall.
+        </p>
+
+        <div class="row">
+          <div class="col-md-8 mb-3">
+            <label class="form-label required">SMTP host</label>
+            <input type="text" class="form-control" name="smtp_host" value="{{smtp.Host}}"
+              placeholder="smtp.mailgun.org" required />
+          </div>
+          <div class="col-md-4 mb-3">
+            <label class="form-label required">Port</label>
+            <input type="number" class="form-control" name="smtp_port" value="{{smtp.Port}}" placeholder="587"
+              min="1" max="65535" required />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label required">Username</label>
+            <input type="text" class="form-control" name="smtp_username" value="{{smtp.Username}}"
+              autocomplete="off" required />
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Password</label>
+            <input type="password" class="form-control" name="smtp_password" autocomplete="new-password" />
+            <small class="form-hint">Leave empty to keep the saved password.</small>
+          </div>
+        </div>
+
+        <div>
+          <label class="form-label required">From address</label>
+          <input type="text" class="form-control" name="smtp_from_email" value="{{smtp.FromEmail}}"
+            placeholder="Scriptables <noreply@example.com>" required />
+        </div>
+      </div>
+
+      <div class="card-footer d-flex">
+        <button type="submit" name="action" value="test" class="btn">
+          <i class="ti ti-send me-2"></i>Send me a test email
+        </button>
+        <button type="submit" name="action" value="save" class="btn btn-primary ms-auto">
+          <i class="ti ti-device-floppy me-2"></i>Save SMTP settings
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

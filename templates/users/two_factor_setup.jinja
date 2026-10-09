@@ -1,0 +1,40 @@
+<div class="alert alert-warning" role="alert">
+  <div class="d-flex">
+    <div class="me-3"><i class="ti ti-shield-lock icon alert-icon"></i></div>
+    <div class="text-secondary">
+      Two factor authentication keeps this server safer. Scriptables has root access to this machine, so if your
+      password is ever leaked or guessed, an attacker gains full control of the server. With two factor turned on
+      they would also need the code from your phone.
+    </div>
+  </div>
+</div>
+
+<p class="text-secondary">
+  Scan this QR code with Google Authenticator, Authy or any TOTP app, then enter the six digit code it shows.
+</p>
+
+<div class="text-center mb-3">
+  <img src="/user/2factor/qrcode" alt="Two factor QR code" class="img-fluid" style="max-width:220px" />
+</div>
+
+<form action="/users/2fa/enable" method="post">
+  <input type="hidden" name="_csrf_token" value="{{_csrf_token}}" />
+
+  <div class="mb-3">
+    <label class="form-label required">Code from your app</label>
+    <input type="text" name="two_factor_code" class="form-control" inputmode="numeric" autocomplete="one-time-code"
+      placeholder="123456" required autofocus />
+  </div>
+
+  <div class="form-footer">
+    <button type="submit" class="btn btn-primary w-100">
+      <i class="ti ti-shield-check me-2"></i>Turn on two factor authentication
+    </button>
+  </div>
+</form>
+
+<form action="/users/2fa/skip" method="post" class="text-center mt-3">
+  <input type="hidden" name="_csrf_token" value="{{_csrf_token}}" />
+  <button type="submit" class="btn btn-link text-secondary">No thank you, not right now</button>
+  <div class="form-hint">You can turn it on later from My profile.</div>
+</form>

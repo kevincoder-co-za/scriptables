@@ -1,0 +1,96 @@
+<div class="page-header d-print-none mb-3">
+  <div class="row g-2 align-items-center">
+    <div class="col">
+      <h2 class="page-title">Docker</h2>
+      <div class="text-secondary mt-1">
+        {% for usage in diskUsage %}
+        <span class="me-3">{{usage.Type}}: {{usage.Size}} ({{usage.Reclaimable}} reclaimable)</span>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="col-auto ms-auto d-print-none">
+      <div class="btn-list">
+        <a href="/logs/docker/0" class="btn">
+          <i class="ti ti-terminal-2 me-2"></i>Log
+        </a>
+        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#prune-modal">
+          <i class="ti ti-trash me-2"></i>Prune system
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <ul class="nav nav-tabs card-header-tabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <a class="nav-link{% if tab == "containers" %} active{% endif %}" href="/docker?tab=containers">
+          <i class="ti ti-box me-2"></i>Containers
+        </a>
+      </li>
+      <li class="nav-item" role="presentation">
+        <a class="nav-link{% if tab == "images" %} active{% endif %}" href="/docker?tab=images">
+          <i class="ti ti-photo me-2"></i>Images
+        </a>
+      </li>
+      <li class="nav-item" role="presentation">
+        <a class="nav-link{% if tab == "networks" %} active{% endif %}" href="/docker?tab=networks">
+          <i class="ti ti-topology-star me-2"></i>Networks
+        </a>
+      </li>
+    </ul>
+    <div class="card-actions">
+      <button class="btn btn-sm" hx-get="/docker/{{tab}}" hx-target="#docker-tab" hx-swap="innerHTML"
+        hx-indicator="#docker-loading">
+        <i class="ti ti-refresh me-1"></i>Refresh
+      </button>
+    </div>
+  </div>
+
+  {# htmx toggles .htmx-request on this element for the duration of any request. #}
+  <div id="docker-loading" class="htmx-indicator">
+    <div class="progress progress-sm mb-0">
+      <div class="progress-bar progress-bar-indeterminate"></div>
+    </div>
+  </div>
+
+  {# Loads once on page load, then re-rendered by every action on the tab. #}
+  <div id="docker-tab" hx-get="/docker/{{tab}}" hx-trigger="load" hx-indicator="#docker-loading">
+    <div class="card-body text-secondary text-center">
+      Talking to Docker&hellip;
+    </div>
+  </div>
+</div>
+
+<div class="modal modal-blur fade" id="prune-modal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <form class="modal-content" method="post" action="/docker/prune">
+      <input type="hidden" name="_csrf_token" value="{{_csrf_token}}" />
+      <div class="modal-header">
+        <h5 class="modal-title">Prune the Docker system</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-secondary">
+          Removes all stopped containers, unused networks, dangling images and the build cache.
+          This cannot be undone.
+        </p>
+        <label class="form-check">
+          <input class="form-check-input" type="checkbox" name="all_images" value="1" />
+          <span class="form-check-label">Also remove every image not used by a container</span>
+        </label>
+        <label class="form-check">
+          <input class="form-check-input" type="checkbox" name="volumes" value="1" />
+          <span class="form-check-label">Also remove unused volumes <span class="text-danger">(deletes data)</span></span>
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-danger">
+          <i class="ti ti-trash me-2"></i>Prune now
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -10,11 +10,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"gorm.io/gorm"
-	"plexcorp.tech/scriptable/console"
-	"plexcorp.tech/scriptable/controllers"
-	"plexcorp.tech/scriptable/middleware"
-	"plexcorp.tech/scriptable/models"
-	"plexcorp.tech/scriptable/utils"
+	"plexscriptables.com/scriptables/console"
+	"plexscriptables.com/scriptables/controllers"
+	"plexscriptables.com/scriptables/middleware"
+	"plexscriptables.com/scriptables/models"
+	"plexscriptables.com/scriptables/utils"
 )
 
 const queuePollInterval = 5 * time.Second
@@ -40,7 +40,7 @@ func runForever(db *gorm.DB, jobs ...func(db *gorm.DB)) {
 }
 
 func startQueueWorkers(db *gorm.DB) {
-	go runForever(db, console.InstallQueuedApplications, console.ApplyQueuedSecuritySettings, console.BuildQueuedSites, console.DeployQueuedSites)
+	go runForever(db, console.InstallQueuedApplications, console.ApplyQueuedSecuritySettings, console.ApplyQueuedDomainSettings, console.BuildQueuedSites, console.DeployQueuedSites)
 	go runForever(db, console.SyncQueuedCrons)
 }
 
@@ -87,6 +87,9 @@ func registerRoutes(router *gin.Engine) {
 	router.Any("/users/password/forgot", controller.ForgotPassword)
 	router.POST("/users/register/complete", controller.RegistrationComplete)
 	router.GET("/users/register", controller.RegisterForm)
+	router.GET("/users/2fa/setup", controller.TwoFactorSetup)
+	router.POST("/users/2fa/enable", controller.TwoFactorEnable)
+	router.POST("/users/2fa/skip", controller.TwoFactorSkip)
 
 	router.GET("/user/list", controller.ListUsers)
 	router.POST("/user/actions", controller.HandleUserActionsFormPost)
@@ -99,6 +102,7 @@ func registerRoutes(router *gin.Engine) {
 
 	router.GET("/", controller.Applications)
 	router.GET("/applications", controller.Applications)
+	router.GET("/application/install/:slug", controller.InstallApplicationForm)
 	router.POST("/application/install", controller.InstallApplication)
 
 	router.GET("/logs/:entity/:id", controller.EntityLogs)
@@ -108,6 +112,23 @@ func registerRoutes(router *gin.Engine) {
 	router.GET("/firewall/rules", controller.FirewallRules)
 	router.POST("/firewall/rule/add", controller.AddFirewallRule)
 	router.POST("/firewall/rule/delete", controller.DeleteFirewallRule)
+
+	router.GET("/docker", controller.Docker)
+	router.GET("/docker/containers", controller.DockerContainers)
+	router.GET("/docker/images", controller.DockerImages)
+	router.GET("/docker/networks", controller.DockerNetworks)
+	router.GET("/docker/container/create", controller.DockerCreateContainer)
+	router.POST("/docker/container/run", controller.DockerRunContainer)
+	router.POST("/docker/container/action", controller.DockerContainerAction)
+	router.POST("/docker/image/pull", controller.DockerPullImage)
+	router.POST("/docker/image/delete", controller.DockerDeleteImage)
+	router.POST("/docker/network/create", controller.DockerCreateNetwork)
+	router.POST("/docker/network/delete", controller.DockerDeleteNetwork)
+	router.POST("/docker/prune", controller.DockerPrune)
+
+	router.GET("/settings", controller.Settings)
+	router.POST("/settings/domain", controller.ApplyDomainSetting)
+	router.POST("/settings/smtp", controller.SaveSmtpSettings)
 
 	router.GET("/security", controller.Security)
 	router.POST("/security/apply", controller.ApplySecuritySettings)

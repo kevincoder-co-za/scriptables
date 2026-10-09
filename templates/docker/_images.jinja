@@ -1,0 +1,87 @@
+{% include "templates/docker/_messages.jinja" %}
+
+<form class="card-body border-bottom" hx-post="/docker/image/pull" hx-target="#docker-tab" hx-swap="innerHTML"
+  hx-indicator="#docker-loading" hx-disabled-elt="find button[type=submit]">
+  <input type="hidden" name="_csrf_token" value="{{ _csrf_token }}" />
+  <div class="row g-2 align-items-end">
+    <div class="col-md-8">
+      <label class="form-label">Pull an image</label>
+      <input type="text" name="image" class="form-control font-monospace" placeholder="nginx:latest" required />
+    </div>
+    <div class="col-md-4 text-md-end">
+      <button type="submit" class="btn btn-primary btn-sm">
+        <i class="ti ti-download me-1"></i>Pull image
+      </button>
+    </div>
+  </div>
+  <small class="form-hint">Large images can take a while. The page updates once the pull has finished.</small>
+</form>
+
+{% if not images %}
+<div class="empty">
+  <div class="empty-icon"><i class="ti ti-photo text-secondary" style="font-size:3rem"></i></div>
+  <p class="empty-title">No images</p>
+  <p class="empty-subtitle text-secondary">Pull an image above or create a container to download one.</p>
+</div>
+{% else %}
+<div class="table-responsive">
+  <table class="table table-vcenter card-table">
+    <thead>
+      <tr>
+        <th>Image</th>
+        <th>ID</th>
+        <th>Size</th>
+        <th>Created</th>
+        <th class="w-1"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for image in images %}
+      <tr>
+        <td class="font-monospace">{{ image.Reference() }}</td>
+        <td class="font-monospace text-secondary small">{{ image.ID }}</td>
+        <td>{{ image.Size }}</td>
+        <td class="text-secondary">{{ image.Created }}</td>
+        <td>
+          <button type="button" class="btn btn-icon btn-sm btn-ghost-danger" data-bs-toggle="modal"
+            data-bs-target="#delete-image-{{ image.ID }}" title="Delete image">
+            <i class="ti ti-trash"></i>
+          </button>
+
+          <div class="modal modal-blur fade" id="delete-image-{{ image.ID }}" tabindex="-1" role="dialog"
+            aria-hidden="true">
+            <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+              <div class="modal-content">
+                <div class="modal-body text-center py-4">
+                  <i class="ti ti-alert-triangle text-danger mb-2" style="font-size:3rem"></i>
+                  <h3>Are you sure?</h3>
+                  <div class="text-secondary">
+                    Docker refuses to delete an image that a container still uses.
+                    <div class="font-monospace mt-2">{{ image.Reference() }}</div>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <form class="w-100" hx-post="/docker/image/delete" hx-target="#docker-tab" hx-swap="innerHTML"
+                    hx-indicator="#docker-loading" hx-disabled-elt="find button[type=submit]">
+                    <input type="hidden" name="_csrf_token" value="{{ _csrf_token }}" />
+                    <input type="hidden" name="id" value="{{ image.ID }}" />
+                    <div class="row">
+                      <div class="col">
+                        <button type="button" class="btn w-100" data-bs-dismiss="modal">Cancel</button>
+                      </div>
+                      <div class="col">
+                        <button type="submit" class="btn btn-danger w-100" data-bs-dismiss="modal">Delete</button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}

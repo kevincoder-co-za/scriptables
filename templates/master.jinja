@@ -52,6 +52,9 @@
                             <a href="/user/profile" class="dropdown-item">
                                 <i class="ti ti-user me-2"></i>My profile
                             </a>
+                            <a href="/settings" class="dropdown-item">
+                                <i class="ti ti-settings me-2"></i>Settings
+                            </a>
                             <div class="dropdown-divider"></div>
                             <a href="/users/logout" class="dropdown-item">
                                 <i class="ti ti-logout me-2"></i>Logout
@@ -89,6 +92,14 @@
                                         <i class="ti ti-robot"></i>
                                     </span>
                                     <span class="nav-link-title">Crons</span>
+                                </a>
+                            </li>
+                            <li class="nav-item{% if highlight == "docker" %} active{% endif %}">
+                                <a class="nav-link" href="/docker">
+                                    <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                        <i class="ti ti-brand-docker"></i>
+                                    </span>
+                                    <span class="nav-link-title">Docker</span>
                                 </a>
                             </li>
                             <li class="nav-item{% if highlight == "firewall" %} active{% endif %}">

@@ -79,7 +79,7 @@ The register page only exists while there are no users. It also asks for the reg
 
 ## Configuration
 
-Settings live in `/opt/scriptables/.env`. Restart the service after changing them.
+The panel domain and SMTP server are set from the **Settings** page (user menu, top right). Settings saved there take precedence over the `.env` values below. The rest live in `/opt/scriptables/.env`. Restart the service after changing them.
 
 | Setting | Purpose |
 | --- | --- |

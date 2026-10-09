@@ -1,0 +1,130 @@
+<div class="page-header d-print-none mb-3">
+  <div class="row g-2 align-items-center">
+    <div class="col">
+      <div class="page-pretitle">Docker</div>
+      <h2 class="page-title">Create a container</h2>
+    </div>
+  </div>
+</div>
+
+<form method="post" action="/docker/container/run">
+  <input type="hidden" name="_csrf_token" value="{{_csrf_token}}" />
+
+  <div class="row row-cards">
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title"><i class="ti ti-box me-2"></i>Container</h3>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label required">Name</label>
+            <input class="form-control" required name="name" value="{{ form.Name }}" placeholder="my-app" />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label required">Image</label>
+            <input class="form-control font-monospace" required name="image" value="{{ form.Image }}"
+              placeholder="nginx:latest" />
+            <small class="form-hint">Pulled automatically if it is not on this machine yet.</small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Restart policy</label>
+            <select name="restart_policy" class="form-select">
+              {% for policy in restartPolicies %}
+              <option value="{{ policy }}" {% if form.RestartPolicy == policy %}selected{% endif %}>{{ policy }}</option>
+              {% endfor %}
+            </select>
+            <small class="form-hint"><code>unless-stopped</code> brings the container back after a reboot.</small>
+          </div>
+
+          <div>
+            <label class="form-label">Command</label>
+            <input class="form-control font-monospace" name="command" value="{{ form.Command }}"
+              placeholder="Leave empty to use the image default" />
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-3">
+        <div class="card-header">
+          <h3 class="card-title"><i class="ti ti-topology-star me-2"></i>Network</h3>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label">Attach to</label>
+            <select name="network" class="form-select" id="network-select">
+              {% for network in networks %}
+              <option value="{{ network.Name }}" {% if form.Network == network.Name %}selected{% endif %}>
+                {{ network.Name }} ({{ network.Driver }})
+              </option>
+              {% endfor %}
+              <option value="new" {% if form.Network == "new" %}selected{% endif %}>Create a new network&hellip;</option>
+            </select>
+          </div>
+
+          <div id="new-network" {% if form.Network != "new" %}class="d-none"{% endif %}>
+            <label class="form-label">New network name</label>
+            <input class="form-control" name="new_network" value="{{ form.NewNetwork }}" placeholder="my-app-net" />
+            <small class="form-hint">Created as a bridge network so containers on it can reach each other by name.</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title"><i class="ti ti-plug-connected me-2"></i>Ports</h3>
+        </div>
+        <div class="card-body">
+          <textarea class="form-control font-monospace" name="ports" rows="3"
+            placeholder="8080:80&#10;127.0.0.1:5432:5432">{{ form.Ports }}</textarea>
+          <small class="form-hint">
+            One per line as <code>host:container</code>. Prefix with <code>127.0.0.1:</code> to keep a port off the
+            public internet. Remember to allow public ports in the firewall.
+          </small>
+        </div>
+      </div>
+
+      <div class="card mt-3">
+        <div class="card-header">
+          <h3 class="card-title"><i class="ti ti-folder me-2"></i>Volumes</h3>
+        </div>
+        <div class="card-body">
+          <textarea class="form-control font-monospace" name="volumes" rows="3"
+            placeholder="/srv/my-app/data:/data&#10;pgdata:/var/lib/postgresql/data:rw">{{ form.Volumes }}</textarea>
+          <small class="form-hint">
+            One per line as <code>/host/folder:/container/folder</code> or <code>volume-name:/container/folder</code>.
+            Add <code>:ro</code> for read only.
+          </small>
+        </div>
+      </div>
+
+      <div class="card mt-3">
+        <div class="card-header">
+          <h3 class="card-title"><i class="ti ti-variable me-2"></i>Environment variables</h3>
+        </div>
+        <div class="card-body">
+          <textarea class="form-control font-monospace" name="environment" rows="4"
+            placeholder="POSTGRES_PASSWORD=secret&#10;TZ=Africa/Johannesburg">{{ form.Environment }}</textarea>
+          <small class="form-hint">One per line as <code>KEY=value</code>.</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex mt-3">
+    <a href="/docker" class="btn btn-link">Cancel</a>
+    <button type="submit" class="btn btn-primary ms-auto">
+      <i class="ti ti-player-play me-2"></i>Create and start container
+    </button>
+  </div>
+</form>
+
+<script>
+  document.getElementById('network-select').addEventListener('change', function () {
+    document.getElementById('new-network').classList.toggle('d-none', this.value !== 'new');
+  });
+</script>

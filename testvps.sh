@@ -60,7 +60,7 @@ create_scriptables_user() {
         uid_owner=\$(getent passwd $host_uid | cut -d: -f1)
         if [ -n \"\$uid_owner\" ]; then userdel -r \"\$uid_owner\" >/dev/null 2>&1; fi
         useradd --uid $host_uid --create-home --shell /bin/bash $APP_USER
-        printf '%s\n' '$APP_USER ALL=(ALL) NOPASSWD:ALL' 'Defaults:$APP_USER !requiretty' 'Defaults:$APP_USER env_keep += \"DEBIAN_FRONTEND\"' > /etc/sudoers.d/$APP_USER
+        printf '%s\n' '$APP_USER ALL=(ALL) NOPASSWD:ALL' 'Defaults:$APP_USER env_keep += \"DEBIAN_FRONTEND\"' > /etc/sudoers.d/$APP_USER
         chmod 440 /etc/sudoers.d/$APP_USER
     "
 }

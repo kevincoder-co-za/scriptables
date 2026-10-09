@@ -6,7 +6,10 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"plexscriptables.com/scriptables/utils"
 )
+
+const ROOT_PASSWORD_PLACEHOLDER = "#ROOT_PASSWORD#"
 
 const STATUS_AVAILABLE = "available"
 
@@ -15,19 +18,21 @@ type Application struct {
 	ID        int64     `gorm:"column:id"`
 	Slug      string    `gorm:"column:slug;type:varchar(100);uniqueIndex"`
 	Status    string    `gorm:"column:status;type:varchar(100)"`
+	Secret    string    `gorm:"column:secret;type:varchar(255)"`
 	CreatedAt time.Time `gorm:"column:created_at"`
 	UpdatedAt time.Time `gorm:"column:updated_at"`
 	TeamId    int64     `gorm:"column:team_id"`
 }
 
 type CatalogApplication struct {
-	Slug        string
-	Name        string
-	Description string
-	Icon        string
-	Package     string
-	Scriptable  string
-	Variables   map[string]string
+	Slug              string
+	Name              string
+	Description       string
+	Icon              string
+	Package           string
+	Scriptable        string
+	Variables         map[string]string
+	RootPasswordLabel string
 }
 
 type ApplicationOverview struct {
@@ -55,8 +60,8 @@ func GetApplicationCatalog() []CatalogApplication {
 	return []CatalogApplication{
 		{Slug: "nginx", Name: "Nginx", Description: "High performance web server and reverse proxy.", Icon: "server-2", Package: "nginx", Scriptable: "nginx"},
 		{Slug: "apache", Name: "Apache", Description: "The Apache HTTP server. Listens on port 8080 when Nginx already owns port 80.", Icon: "feather", Package: "apache2", Scriptable: "apache"},
-		{Slug: "mysql", Name: "MySQL", Description: "MySQL database server, reachable from this machine only.", Icon: "brand-mysql", Package: "mysql-server", Scriptable: "mysql"},
-		{Slug: "mariadb", Name: "MariaDB", Description: "MariaDB database server, a drop-in replacement for MySQL.", Icon: "database", Package: "mariadb-server", Scriptable: "mariadb"},
+		{Slug: "mysql", Name: "MySQL", Description: "MySQL database server, reachable from this machine only.", Icon: "brand-mysql", Package: "mysql-server", Scriptable: "mysql", RootPasswordLabel: "MySQL root password"},
+		{Slug: "mariadb", Name: "MariaDB", Description: "MariaDB database server, a drop-in replacement for MySQL.", Icon: "database", Package: "mariadb-server", Scriptable: "mariadb", RootPasswordLabel: "MariaDB root password"},
 		{Slug: "postgresql", Name: "PostgreSQL", Description: "PostgreSQL relational database server.", Icon: "database", Package: "postgresql", Scriptable: "postgresql"},
 		{Slug: "redis", Name: "Redis", Description: "In-memory store for caching, sessions and queues.", Icon: "bolt", Package: "redis-server", Scriptable: "redis"},
 		{Slug: "memcached", Name: "Memcached", Description: "Distributed memory object caching system.", Icon: "stack-2", Package: "memcached", Scriptable: "memcached"},
@@ -83,12 +88,16 @@ func FindCatalogApplication(slug string) (CatalogApplication, bool) {
 	return CatalogApplication{}, false
 }
 
-func (application CatalogApplication) ReplaceScriptableVariables(script string) string {
+func (application CatalogApplication) AsksForRootPassword() bool {
+	return application.RootPasswordLabel != ""
+}
+
+func (application CatalogApplication) ReplaceScriptableVariables(script string, rootPassword string) string {
 	for placeholder, value := range application.Variables {
 		script = strings.ReplaceAll(script, placeholder, value)
 	}
 
-	return script
+	return strings.ReplaceAll(script, ROOT_PASSWORD_PLACEHOLDER, rootPassword)
 }
 
 func findInstalledPackages(packages []string) map[string]bool {
@@ -148,13 +157,17 @@ func GetApplicationsOverview(db *gorm.DB) []ApplicationOverview {
 	return overview
 }
 
-func QueueApplicationInstall(db *gorm.DB, slug string, teamId int64) Application {
+func QueueApplicationInstall(db *gorm.DB, slug string, teamId int64, rootPassword string) Application {
 	var application Application
 	db.Where("slug = ?", slug).Limit(1).Find(&application)
 
 	application.Slug = slug
 	application.Status = STATUS_QUEUED
 	application.TeamId = teamId
+	application.Secret = ""
+	if rootPassword != "" {
+		application.Secret = utils.Encrypt(rootPassword)
+	}
 	application.UpdatedAt = time.Now()
 	if application.ID == 0 {
 		application.CreatedAt = time.Now()
@@ -172,4 +185,16 @@ func GetQueuedApplications(db *gorm.DB) []Application {
 
 func SetApplicationStatus(db *gorm.DB, id int64, status string) {
 	db.Model(&Application{}).Where("id = ?", id).Update("status", status)
+}
+
+func ForgetApplicationSecret(db *gorm.DB, id int64) {
+	db.Model(&Application{}).Where("id = ?", id).Update("secret", "")
+}
+
+func (application Application) RootPassword() string {
+	if application.Secret == "" {
+		return ""
+	}
+
+	return utils.Decrypt(application.Secret)
 }

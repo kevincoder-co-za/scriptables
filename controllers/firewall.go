@@ -10,7 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/noirbizarre/gonja"
-	"plexcorp.tech/scriptable/models"
+	"plexscriptables.com/scriptables/models"
 )
 
 var firewallPortPattern = regexp.MustCompile(`^(any|\d{1,5}(:\d{1,5})?)$`)

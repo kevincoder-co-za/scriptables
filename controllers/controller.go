@@ -27,8 +27,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/noirbizarre/gonja"
 	"gorm.io/gorm"
-	"plexcorp.tech/scriptable/models"
-	"plexcorp.tech/scriptable/utils"
+	"plexscriptables.com/scriptables/models"
+	"plexscriptables.com/scriptables/utils"
 )
 
 // We not using the default HTML templating engine that GIN uses. Jinja is a bit easier to work with
@@ -76,7 +76,7 @@ func (c *Controller) RenderHtml(tpl_name string, ctx gonja.Context, gctx *gin.Co
 		ctx["highlight"] = ""
 	}
 
-	ctx["scriptable_base_url"] = os.Getenv("SCRIPTABLE_URL")
+	ctx["scriptable_base_url"] = models.GetPublicUrl(c.GetDB(gctx))
 	ctx["current_year"] = time.Now().Year()
 	ctx["STATUS_QUEUED"] = models.STATUS_QUEUED
 	ctx["STATUS_RUNNING"] = models.STATUS_RUNNING

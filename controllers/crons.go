@@ -10,7 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/noirbizarre/gonja"
-	"plexcorp.tech/scriptable/models"
+	"plexscriptables.com/scriptables/models"
 )
 
 var linuxUsernamePattern = regexp.MustCompile(`^[a-z_][a-z0-9_-]*$`)

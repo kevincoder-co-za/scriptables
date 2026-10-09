@@ -2,8 +2,8 @@ package console
 
 import (
 	"gorm.io/gorm"
-	"plexcorp.tech/scriptable/models"
-	"plexcorp.tech/scriptable/utils"
+	"plexscriptables.com/scriptables/models"
+	"plexscriptables.com/scriptables/utils"
 )
 
 const applicationLogEntity = "application"
@@ -32,8 +32,14 @@ func installApplication(db *gorm.DB, application models.Application) {
 		return
 	}
 
-	run.replaceVariables = catalogApplication.ReplaceScriptableVariables
-	models.SetApplicationStatus(db, application.ID, statusForOutcome(run.runAllScripts(scripts)))
+	rootPassword := application.RootPassword()
+	run.replaceVariables = func(script string) string {
+		return catalogApplication.ReplaceScriptableVariables(script, rootPassword)
+	}
+
+	succeeded := run.runAllScripts(scripts)
+	models.ForgetApplicationSecret(db, application.ID)
+	models.SetApplicationStatus(db, application.ID, statusForOutcome(succeeded))
 }
 
 func InstallQueuedApplications(db *gorm.DB) {

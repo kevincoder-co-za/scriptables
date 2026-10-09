@@ -7,8 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/noirbizarre/gonja"
 	"gorm.io/gorm"
-	"plexcorp.tech/scriptable/models"
-	"plexcorp.tech/scriptable/utils"
+	"plexscriptables.com/scriptables/models"
+	"plexscriptables.com/scriptables/utils"
 )
 
 type loggedEntity struct {
@@ -66,6 +66,18 @@ func describeLoggedEntity(db *gorm.DB, entity string, id int64, teamId int64) (l
 
 	case models.FIREWALL_LOG_ENTITY:
 		return loggedEntity{Title: "Firewall logs", Section: "Firewall", Highlight: "firewall"}, true
+
+	case models.SETTINGS_LOG_ENTITY:
+		setting := models.GetSetting(db)
+		return loggedEntity{
+			Title:      "Domain setup logs",
+			Section:    "Settings",
+			Highlight:  "settings",
+			InProgress: isInProgress(setting.DomainStatus),
+		}, setting.ID == id
+
+	case models.DOCKER_LOG_ENTITY:
+		return loggedEntity{Title: "Docker logs", Section: "Docker", Highlight: "docker"}, true
 	}
 
 	return loggedEntity{}, false
