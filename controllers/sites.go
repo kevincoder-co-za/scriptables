@@ -11,9 +11,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/noirbizarre/gonja"
-	"plexcorp.tech/scriptable/console"
-	"plexcorp.tech/scriptable/models"
-	"plexcorp.tech/scriptable/utils"
+	"plexscriptables.com/scriptables/console"
+	"plexscriptables.com/scriptables/models"
+	"plexscriptables.com/scriptables/utils"
 )
 
 var domainPattern = regexp.MustCompile(`^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$`)

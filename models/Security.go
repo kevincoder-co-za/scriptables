@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"gorm.io/gorm"
-	"plexcorp.tech/scriptable/utils"
+	"plexscriptables.com/scriptables/utils"
 )
 
 const SECURITY_LOG_ENTITY = "security"

@@ -7,7 +7,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	"plexcorp.tech/scriptable/models"
+	"plexscriptables.com/scriptables/models"
 )
 
 func isPublicPath(path string) bool {

@@ -2,8 +2,8 @@ package console
 
 import (
 	"gorm.io/gorm"
-	"plexcorp.tech/scriptable/models"
-	"plexcorp.tech/scriptable/utils"
+	"plexscriptables.com/scriptables/models"
+	"plexscriptables.com/scriptables/utils"
 )
 
 const siteLogEntity = "site"

@@ -4,8 +4,8 @@ import (
 	"os"
 
 	"gorm.io/gorm"
-	"plexcorp.tech/scriptable/models"
-	"plexcorp.tech/scriptable/utils"
+	"plexscriptables.com/scriptables/models"
+	"plexscriptables.com/scriptables/utils"
 )
 
 const cronFilePath = "/etc/cron.d/scriptables"

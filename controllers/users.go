@@ -12,8 +12,8 @@ import (
 	"github.com/noirbizarre/gonja"
 	"github.com/pquerna/otp/totp"
 	"gorm.io/gorm"
-	"plexcorp.tech/scriptable/models"
-	"plexcorp.tech/scriptable/utils"
+	"plexscriptables.com/scriptables/models"
+	"plexscriptables.com/scriptables/utils"
 )
 
 const registrationLockedMessage = "Registration is locked. Run the provision script with --reset-registration-token on this server to get a new one time registration token."
@@ -526,9 +526,12 @@ func (c *Controller) RegistrationComplete(gctx *gin.Context) {
 				fmt.Println("Could not remove the used registration token:", err)
 			}
 
-			utils.SendEmail("Welcome to Scriptables!", "", []string{user.Email}, vars, "welcome")
-			c.FlashSuccess(gctx, "Successfully setup your account. You now can login.")
-			gctx.Redirect(http.StatusFound, "/users/login")
+			utils.SendEmail(models.GetMailConfig(db), "Welcome to Scriptables!", "", []string{user.Email}, vars, "welcome")
+
+			session := sessions.Default(gctx)
+			session.Set("user_id", user.ID)
+			session.Save()
+			gctx.Redirect(http.StatusFound, "/users/2fa/setup")
 			return
 		}
 	} else {
@@ -536,4 +539,68 @@ func (c *Controller) RegistrationComplete(gctx *gin.Context) {
 	}
 
 	c.RenderAuth("users/register", vars, gctx)
+}
+
+func (c *Controller) sessionUserForTwoFactorSetup(gctx *gin.Context) (models.User, bool) {
+	userID, ok := sessions.Default(gctx).Get("user_id").(int64)
+	if !ok {
+		gctx.Redirect(http.StatusFound, "/users/login")
+		return models.User{}, false
+	}
+
+	user := models.GetUserById(c.GetDB(gctx), userID)
+	if user.ID == 0 {
+		gctx.Redirect(http.StatusFound, "/users/login")
+		return models.User{}, false
+	}
+
+	return user, true
+}
+
+func (c *Controller) renderTwoFactorSetup(gctx *gin.Context, errors []string) {
+	vars := gonja.Context{"title": "Protect your account"}
+	if len(errors) > 0 {
+		vars["errors"] = errors
+	}
+
+	c.RenderAuth("users/two_factor_setup", vars, gctx)
+}
+
+func (c *Controller) TwoFactorSetup(gctx *gin.Context) {
+	if _, ok := c.sessionUserForTwoFactorSetup(gctx); !ok {
+		return
+	}
+
+	c.renderTwoFactorSetup(gctx, nil)
+}
+
+func (c *Controller) TwoFactorEnable(gctx *gin.Context) {
+	user, ok := c.sessionUserForTwoFactorSetup(gctx)
+	if !ok {
+		return
+	}
+
+	if !c.TestCSRFToken(gctx) {
+		c.renderTwoFactorSetup(gctx, []string{"Your session expired. Please scan the code again."})
+		return
+	}
+
+	code := strings.TrimSpace(gctx.PostForm("two_factor_code"))
+	if user.TwoFactorCode == "" || !totp.Validate(code, utils.Decrypt(user.TwoFactorCode)) {
+		c.renderTwoFactorSetup(gctx, []string{"That code did not match. Scan the QR code again and enter the current code."})
+		return
+	}
+
+	c.GetDB(gctx).Model(&models.User{}).Where("id = ?", user.ID).Update("two_factor", 1)
+	c.FlashSuccess(gctx, "Two factor authentication is on. You will be asked for a code each time you log in.")
+	gctx.Redirect(http.StatusFound, "/")
+}
+
+func (c *Controller) TwoFactorSkip(gctx *gin.Context) {
+	if _, ok := c.sessionUserForTwoFactorSetup(gctx); !ok {
+		return
+	}
+
+	c.FlashSuccess(gctx, "Your account is ready. You can turn on two factor authentication any time from My profile.")
+	gctx.Redirect(http.StatusFound, "/")
 }

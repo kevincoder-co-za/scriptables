@@ -1,0 +1,26 @@
+<div class="page-header d-print-none mb-3">
+  <div class="row g-2 align-items-center">
+    <div class="col">
+      <h2 class="page-title">Docker</h2>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="empty">
+    <div class="empty-icon"><i class="ti ti-brand-docker text-secondary" style="font-size:3rem"></i></div>
+    <p class="empty-title">Oops... Docker doesn't seem to be installed</p>
+    <p class="empty-subtitle text-secondary">
+      Install the Docker engine on this machine and this page will let you manage containers, images and networks.
+    </p>
+    <div class="empty-action">
+      <form method="post" action="/application/install">
+        <input type="hidden" name="_csrf_token" value="{{_csrf_token}}" />
+        <input type="hidden" name="slug" value="docker" />
+        <button type="submit" class="btn btn-primary">
+          <i class="ti ti-download me-2"></i>Install Docker
+        </button>
+      </form>
+    </div>
+  </div>
+</div>

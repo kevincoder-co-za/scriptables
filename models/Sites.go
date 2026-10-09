@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"gorm.io/gorm"
-	"plexcorp.tech/scriptable/utils"
+	"plexscriptables.com/scriptables/utils"
 )
 
 type SiteQueue struct {

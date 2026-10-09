@@ -1,4 +1,4 @@
-module plexcorp.tech/scriptable
+module plexscriptables.com/scriptables
 
 go 1.23.0
 

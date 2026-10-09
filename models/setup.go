@@ -32,6 +32,7 @@ func OpenDatabase() (*gorm.DB, error) {
 		&SiteQueue{},
 		&Cron{},
 		&SecuritySetting{},
+		&Setting{},
 		&OperationLog{},
 	)
 
@@ -42,4 +43,7 @@ func FailInterruptedJobs(db *gorm.DB) {
 	for _, table := range []string{"applications", "sites", "crons", "security_settings"} {
 		db.Table(table).Where("status = ?", STATUS_RUNNING).Update("status", STATUS_FAILED)
 	}
+
+	db.Table("settings").Where("domain_status = ?", STATUS_RUNNING).Update("domain_status", STATUS_FAILED)
+	db.Table("applications").Where("status = ?", STATUS_FAILED).Update("secret", "")
 }

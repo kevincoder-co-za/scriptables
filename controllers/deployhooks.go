@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"plexcorp.tech/scriptable/models"
+	"plexscriptables.com/scriptables/models"
 )
 
 // Will trigger a deploy - useful to use with your version control system, to build

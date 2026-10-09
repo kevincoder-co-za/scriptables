@@ -1,0 +1,114 @@
+{% include "templates/docker/_messages.jinja" %}
+
+<div class="card-body border-bottom d-flex align-items-center">
+  <div class="text-secondary">{{ containers|length }} container(s)</div>
+  <a href="/docker/container/create" class="btn btn-primary btn-sm ms-auto">
+    <i class="ti ti-plus me-1"></i>Add container
+  </a>
+</div>
+
+{% if not containers %}
+<div class="empty">
+  <div class="empty-icon"><i class="ti ti-box text-secondary" style="font-size:3rem"></i></div>
+  <p class="empty-title">No containers</p>
+  <p class="empty-subtitle text-secondary">Add a container above to get started.</p>
+</div>
+{% else %}
+<div class="table-responsive">
+  <table class="table table-vcenter card-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Image</th>
+        <th>Status</th>
+        <th>Ports</th>
+        <th>Networks</th>
+        <th class="w-1"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for container in containers %}
+      <tr>
+        <td>
+          <div class="fw-medium">{{ container.Name }}</div>
+          <div class="text-secondary small font-monospace">{{ container.ID }}</div>
+        </td>
+        <td class="font-monospace">{{ container.Image }}</td>
+        <td>
+          {% if container.IsRunning() %}
+          <span class="badge bg-success-lt">{{ container.Status }}</span>
+          {% else %}
+          <span class="badge bg-secondary-lt">{{ container.Status }}</span>
+          {% endif %}
+        </td>
+        <td class="font-monospace small">{{ container.Ports }}</td>
+        <td class="small">{{ container.Networks }}</td>
+        <td>
+          <div class="btn-list flex-nowrap">
+            <form hx-post="/docker/container/action" hx-target="#docker-tab" hx-swap="innerHTML"
+              hx-indicator="#docker-loading" hx-disabled-elt="find button">
+              <input type="hidden" name="_csrf_token" value="{{ _csrf_token }}" />
+              <input type="hidden" name="id" value="{{ container.ID }}" />
+              {% if container.IsRunning() %}
+              <button type="submit" name="action" value="restart" class="btn btn-icon btn-sm btn-ghost-secondary"
+                title="Restart">
+                <i class="ti ti-refresh"></i>
+              </button>
+              <button type="submit" name="action" value="stop" class="btn btn-icon btn-sm btn-ghost-warning"
+                title="Stop">
+                <i class="ti ti-player-stop"></i>
+              </button>
+              {% else %}
+              <button type="submit" name="action" value="start" class="btn btn-icon btn-sm btn-ghost-success"
+                title="Start">
+                <i class="ti ti-player-play"></i>
+              </button>
+              {% endif %}
+            </form>
+
+            <button type="button" class="btn btn-icon btn-sm btn-ghost-danger" data-bs-toggle="modal"
+              data-bs-target="#delete-container-{{ container.ID }}" title="Delete container">
+              <i class="ti ti-trash"></i>
+            </button>
+          </div>
+
+          {# One modal per row keeps the confirm fully declarative - no JS. #}
+          <div class="modal modal-blur fade" id="delete-container-{{ container.ID }}" tabindex="-1" role="dialog"
+            aria-hidden="true">
+            <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+              <div class="modal-content">
+                <div class="modal-body text-center py-4">
+                  <i class="ti ti-alert-triangle text-danger mb-2" style="font-size:3rem"></i>
+                  <h3>Are you sure?</h3>
+                  <div class="text-secondary">
+                    This stops and deletes the container. Data in named volumes is kept, anything else inside the
+                    container is lost.
+                    <div class="font-monospace mt-2">{{ container.Name }}</div>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <form class="w-100" hx-post="/docker/container/action" hx-target="#docker-tab"
+                    hx-swap="innerHTML" hx-indicator="#docker-loading" hx-disabled-elt="find button[type=submit]">
+                    <input type="hidden" name="_csrf_token" value="{{ _csrf_token }}" />
+                    <input type="hidden" name="id" value="{{ container.ID }}" />
+                    <input type="hidden" name="action" value="delete" />
+                    <div class="row">
+                      <div class="col">
+                        <button type="button" class="btn w-100" data-bs-dismiss="modal">Cancel</button>
+                      </div>
+                      <div class="col">
+                        <button type="submit" class="btn btn-danger w-100" data-bs-dismiss="modal">Delete</button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}

@@ -1,0 +1,20 @@
+{% if errorMsg is defined %}
+<div class="alert alert-danger m-3" role="alert">
+  <div class="d-flex">
+    <div class="me-3"><i class="ti ti-alert-circle icon alert-icon"></i></div>
+    <div>
+      <h4 class="alert-title">Docker command failed</h4>
+      <div class="text-secondary font-monospace" style="white-space:pre-wrap">{{ errorMsg }}</div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if successMsg is defined %}
+<div class="alert alert-success m-3" role="alert">
+  <div class="d-flex">
+    <div class="me-3"><i class="ti ti-circle-check icon alert-icon"></i></div>
+    <div class="text-secondary">{{ successMsg }}</div>
+  </div>
+</div>
+{% endif %}

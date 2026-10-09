@@ -89,7 +89,6 @@ allow_passwordless_sudo() {
 
     cat > "$sudoers_file" <<EOF
 $APP_USER ALL=(ALL) NOPASSWD:ALL
-Defaults:$APP_USER !requiretty
 Defaults:$APP_USER env_keep += "DEBIAN_FRONTEND"
 EOF
 

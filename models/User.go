@@ -6,7 +6,7 @@ import (
 
 	"github.com/noirbizarre/gonja"
 	"gorm.io/gorm"
-	"plexcorp.tech/scriptable/utils"
+	"plexscriptables.com/scriptables/utils"
 )
 
 type User struct {
@@ -81,7 +81,7 @@ func SendPasswordResetToken(db *gorm.DB, email string, subject string, template 
 		"email":   user.Email,
 	}
 
-	utils.SendEmail(subject, "", []string{user.Email}, vars, template)
+	utils.SendEmail(GetMailConfig(db), subject, "", []string{user.Email}, vars, template)
 }
 
 func CountUsers(db *gorm.DB) int64 {
